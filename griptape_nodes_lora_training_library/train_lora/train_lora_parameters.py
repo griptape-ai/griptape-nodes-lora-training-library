@@ -22,7 +22,7 @@ MODEL_FAMILIES = ["FLUX.1", "SD3", "SDXL"]
 
 class TrainLoraParameters(ABC):
     START_PARAMS: ClassVar = ["lora", "model_family"]
-    END_PARAMS: ClassVar = []
+    END_PARAMS: ClassVar = ["Status"]
     def __init__(self, node: TrainLoraNode):
         self._node = node
         self._model_family_parameters: TrainLoraModelFamilyParameters
@@ -110,7 +110,6 @@ class TrainLoraParameters(ABC):
 
     def get_model_family(self) -> str:
         return self._node.get_parameter_value("model_family")
-    
     
     def validate_before_node_run(self) -> list[Exception] | None:
         return self.model_family_parameters.validate_before_node_run()
