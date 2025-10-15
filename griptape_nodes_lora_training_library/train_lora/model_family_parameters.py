@@ -26,7 +26,11 @@ class TrainLoraModelFamilyParameters(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_script_kwargs(self) -> dict:
+    def get_script_params(self) -> list[str]:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_mixed_precision(self) -> str:
         raise NotImplementedError
     
     @abstractmethod

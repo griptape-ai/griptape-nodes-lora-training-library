@@ -34,12 +34,11 @@ class SD3Parameters(TrainLoraModelFamilyParameters):
     def remove_input_parameters(self) -> None:
         self._huggingface_repo_parameter.remove_input_parameters()
 
-    def get_script_kwargs(self) -> dict:
-        kwargs = {
-            "sd3_model": self._node.get_parameter_value("sd3_model"),
-            # TODO: Add all parameters
-        }
-        return kwargs
+    def get_script_params(self) -> list[str]:
+        return []
+
+    def get_mixed_precision(self) -> str:
+        return "bf16"
 
     def get_script_name(self) -> str:
         return "sd3_train_network.py"

@@ -97,13 +97,24 @@ class TrainLoraNode(SuccessFailureNode):
             logger.info(f"Python executable found at: {python_exe}")
             return python_exe
         else:
-            raise FileNotFoundError("Python executable not found in the expected location.")
+            raise FileNotFoundError(f"Python executable not found in the expected location: {python_exe}")
 
     def _generate_command(self, library_env_python: Path) -> list[str]:
         script_name = self.params.model_family_parameters.get_script_name()
-        script_kwargs = self.params.model_family_parameters.get_script_kwargs()
-        # TODO: Implement actual command generation logic based on parameters
-        command = [str(library_env_python), "-c", f"print(\"{script_name}: {script_kwargs}\")"]
+        sd_scripts_dir = Path(__file__).parent.parent.parent / "sd-scripts"
+        script_path = sd_scripts_dir / script_name
+        if not script_path.exists():
+            raise FileNotFoundError(f"Script not found: {script_path}")
+        command = [
+            str(library_env_python),
+            "-u",
+            "-m",
+            "accelerate.commands.launch",
+            "--num_cpu_threads_per_process", "1",
+            '--mixed_precision', self.params.model_family_parameters.get_mixed_precision(),
+            str(script_path)
+        ]
+        command.extend(self.params.model_family_parameters.get_script_params())
         logger.info(f"Generated command: {command}")
         return command
 
@@ -129,7 +140,7 @@ class TrainLoraNode(SuccessFailureNode):
             return
             
         try:
-            subprocess.run(command)
+            subprocess.run(args=command)
             success_msg = f"Lora training executed successfully."
             self._set_status_results(was_successful=True, result_details=f"SUCCESS: {success_msg}")
         except Exception as e:

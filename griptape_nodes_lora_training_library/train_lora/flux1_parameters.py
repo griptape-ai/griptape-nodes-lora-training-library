@@ -111,6 +111,13 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             default_value=1e-3,
             tooltip="The alpha parameter for the network.",
         )
+        self._full_bf16 = Parameter(
+            name="full_bf16",
+            allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
+            type="bool",
+            default_value=False,
+            tooltip="Whether to use full bf16 precision.",
+        )
         self._mixed_precision = Parameter(
             name="mixed_precision",
             allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
@@ -174,6 +181,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         self._node.add_parameter(self._max_train_epochs)
         self._node.add_parameter(self._network_dim)
         self._node.add_parameter(self._network_alpha)
+        self._node.add_parameter(self._full_bf16)
         self._node.add_parameter(self._mixed_precision)
         self._node.add_parameter(self._save_precision)
         self._node.add_parameter(self._guidance_scale)
@@ -193,6 +201,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         self._node.remove_parameter_by_name(self._max_train_epochs.name)
         self._node.remove_parameter_by_name(self._network_dim.name)
         self._node.remove_parameter_by_name(self._network_alpha.name)
+        self._node.remove_parameter_by_name(self._full_bf16.name)
         self._node.remove_parameter_by_name(self._mixed_precision.name)
         self._node.remove_parameter_by_name(self._save_precision.name)
         self._node.remove_parameter_by_name(self._guidance_scale.name)
@@ -201,14 +210,50 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         self._node.remove_parameter_by_name(self._max_data_loader_n_workers.name)
         self._seed_parameter.remove_input_parameters()
 
-    def get_script_kwargs(self) -> dict:
-        kwargs = {
-            "flux_model": self._node.get_parameter_value("flux_model"),
-            "text_encoder": self._node.get_parameter_value("text_encoder"),
-            "text_encoder_2": self._node.get_parameter_value("text_encoder_2"),
-            # TODO: Add all parameters
-        }
-        return kwargs
+    def get_script_params(self) -> list[str]:
+        hardcoded_params = [
+            "--cache_latents_to_disk",
+            "--sdpa",
+            "--persistent_data_loader_workers",
+            "--gradient_checkpointing",
+            "--cache_text_encoder_outputs",
+            "--discrete_flow_shift", "3.1582",
+            "--timestep_sampling", "shift",
+            "--network_module", "networks.lora_flux",
+            "--save_model_as", "safetensors",
+            "--loss_type", "l2",
+            '--model_prediction_type', 'raw',
+        ]
+        key_value_params = [
+            # TODO: Get the .tensorfile paths - https://github.com/griptape-ai/griptape-nodes-lora-training-library/issues/4
+            "--pretrained_model_name_or_path", self._node.get_parameter_value("flux_model"),
+            "--clip_l", self._node.get_parameter_value("text_encoder"),
+            "--t5xxl", self._node.get_parameter_value("text_encoder_2"),
+            "--ae", self._node.get_parameter_value("flux_model"), 
+            "--dataset_config", self._node.get_parameter_value("dataset_config"),
+            "--output_dir", self._node.get_parameter_value("output_dir"),
+            "--output_name", self._node.get_parameter_value("output_name"),
+            "--learning_rate", str(self._node.get_parameter_value("learning_rate")),
+            "--max_train_epochs", str(self._node.get_parameter_value("max_train_epochs")),
+            "--network_dim", str(self._node.get_parameter_value("network_dim")),
+            "--network_alpha", str(self._node.get_parameter_value("network_alpha")),
+            "--save_precision", self._node.get_parameter_value("save_precision"),
+            "--guidance_scale", str(self._node.get_parameter_value("guidance_scale")),
+            "--max_data_loader_n_workers", str(self._node.get_parameter_value("max_data_loader_n_workers")),
+            "--seed", str(self._seed_parameter.get_seed()),
+        ]
+        params = hardcoded_params + key_value_params
+        if self._node.get_parameter_value("full_bf16"):
+            params.append("--full_bf16")
+        if self._node.get_parameter_value("fp8_base"):
+            params.append("--fp8_base")
+        if self._node.get_parameter_value("high_vram"):
+            # Note that the param has no underscore
+            params.append("--highvram")
+        return params
+    
+    def get_mixed_precision(self) -> str:
+        return self._node.get_parameter_value("mixed_precision")
     
     def get_script_name(self) -> str:
         return "flux_train_network.py"
