@@ -1,0 +1,41 @@
+{
+    "name": "Griptape Nodes Lora Training Library",
+    "library_schema_version": "0.3.0",
+    "metadata": {
+        "author": "Griptape, Inc.",
+        "description": "Lora training for Griptape Nodes.",
+        "library_version": "0.60.0",
+        "engine_version": "0.60.0",
+        "tags": [
+            "Griptape",
+            "AI"
+            ],
+        "dependencies": {
+            "pip_dependencies": [
+                "griptape"
+            ],
+            "pip_install_flags": []
+        }
+    },
+    "categories": [
+        {
+            "Lora": {
+                "color": "border-red-500",
+                "title": "Lora",
+                "description": "Does lora stuff",
+                "icon": "Scale"
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "class_name": "TrainLora",
+            "file_path": "train_lora_node.py",
+            "metadata": {
+                "category": "Lora",
+                "description": "Griptape Node that trains a Lora model.",
+                "display_name": "Train Lora"
+            }
+        }
+    ]
+}
