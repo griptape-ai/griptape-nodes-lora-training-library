@@ -29,8 +29,8 @@
     ],
     "nodes": [
         {
-            "class_name": "TrainLora",
-            "file_path": "train_lora_node.py",
+            "class_name": "TrainLoraNode",
+            "file_path": "train_lora/train_lora_node.py",
             "metadata": {
                 "category": "Lora",
                 "description": "Griptape Node that trains a Lora model.",

@@ -1,3 +1,4 @@
 .env
 .venv
-example_nodes_template/__pycache__/
+griptape_nodes_lora_training_library/__pycache__/
+griptape_nodes_lora_training_library/train_lora/__pycache__/
