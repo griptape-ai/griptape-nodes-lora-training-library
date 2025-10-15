@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from griptape_nodes.exe_types.core_types import Parameter
+from griptape_nodes.common.parameters.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
 
 from train_lora.model_family_parameters import TrainLoraModelFamilyParameters
 
@@ -16,25 +17,26 @@ logger = logging.getLogger("diffusers_nodes_library")
 class SD3Parameters(TrainLoraModelFamilyParameters):
     def __init__(self, node: TrainLoraNode):
         self._node = node
+        self._huggingface_repo_parameter = HuggingFaceRepoParameter(
+            node,
+            repo_ids=[
+                "stabilityai/stable-diffusion-3.5-medium",
+                "stabilityai/stable-diffusion-3.5-large",
+                "stabilityai/stable-diffusion-3.5-large-turbo",
+                "stabilityai/stable-diffusion-3-medium-diffusers",
+            ],
+            parameter_name="sd3_model",
+        )
 
     def add_input_parameters(self) -> None:
-        self._node.add_parameter(
-            Parameter(
-                name="prompt2",
-                default_value="SD3",
-                type="str",
-                tooltip="The prompt or prompts to guide the image generation.",
-            )
-        )
-        # TODO: Add all parameters
+        self._huggingface_repo_parameter.add_input_parameters()
 
     def remove_input_parameters(self) -> None:
-        self._node.remove_parameter_element_by_name("prompt2")
-        # TODO: Remove all parameters
+        self._huggingface_repo_parameter.remove_input_parameters()
 
     def get_script_kwargs(self) -> dict:
         kwargs = {
-            "prompt": self._node.get_parameter_value("prompt2"),
+            "sd3_model": self._node.get_parameter_value("sd3_model"),
             # TODO: Add all parameters
         }
         return kwargs
