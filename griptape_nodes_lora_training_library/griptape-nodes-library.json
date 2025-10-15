@@ -12,9 +12,10 @@
             ],
         "dependencies": {
             "pip_dependencies": [
-                "git+https://github.com/kohya-ss/sd-scripts.git@sd3",
                 "torch==2.8.0",
-                "torchvision==0.23.0"
+                "torchvision==0.23.0",
+                "git+https://github.com/kohya-ss/sd-scripts.git@sd3",
+                "xformers"
             ],
             "pip_install_flags": [
                 "--index-url",
