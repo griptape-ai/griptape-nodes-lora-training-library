@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from griptape_nodes.common.parameters.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
@@ -28,22 +29,6 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
                 "black-forest-labs/FLUX.1-Krea-dev",
             ],
             parameter_name="flux_model",
-        )
-
-        self._text_encoder_repo_parameter = HuggingFaceRepoParameter(
-            node,
-            repo_ids=[
-                "openai/clip-vit-large-patch14",
-            ],
-            parameter_name="text_encoder",
-        )
-
-        self._text_encoder_2_repo_parameter = HuggingFaceRepoParameter(
-            node,
-            repo_ids=[
-                "google/t5-v1_1-xxl",
-            ],
-            parameter_name="text_encoder_2",
         )
         self._dataset_config = Parameter(
             name="dataset_config",
@@ -152,8 +137,8 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             default_value=True,
             tooltip="Whether to quantize models to fp8.",
         )
-        self._high_vram = Parameter(
-            name="high_vram",
+        self._highvram = Parameter(
+            name="highvram",
             allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
             type="bool",
             default_value=True,
@@ -172,8 +157,6 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
 
     def add_input_parameters(self) -> None:
         self._model_repo_parameter.add_input_parameters()
-        self._text_encoder_repo_parameter.add_input_parameters()
-        self._text_encoder_2_repo_parameter.add_input_parameters()
         self._node.add_parameter(self._dataset_config)
         self._node.add_parameter(self._output_dir)
         self._node.add_parameter(self._output_name)
@@ -186,14 +169,12 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         self._node.add_parameter(self._save_precision)
         self._node.add_parameter(self._guidance_scale)
         self._node.add_parameter(self._fp8_base)
-        self._node.add_parameter(self._high_vram)
+        self._node.add_parameter(self._highvram)
         self._node.add_parameter(self._max_data_loader_n_workers)
         self._seed_parameter.add_input_parameters()
 
     def remove_input_parameters(self) -> None:
         self._model_repo_parameter.remove_input_parameters()
-        self._text_encoder_repo_parameter.remove_input_parameters()
-        self._text_encoder_2_repo_parameter.remove_input_parameters()
         self._node.remove_parameter_by_name(self._dataset_config.name)
         self._node.remove_parameter_by_name(self._output_dir.name)
         self._node.remove_parameter_by_name(self._output_name.name)
@@ -206,9 +187,46 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         self._node.remove_parameter_by_name(self._save_precision.name)
         self._node.remove_parameter_by_name(self._guidance_scale.name)
         self._node.remove_parameter_by_name(self._fp8_base.name)
-        self._node.remove_parameter_by_name(self._high_vram.name)
+        self._node.remove_parameter_by_name(self._highvram.name)
         self._node.remove_parameter_by_name(self._max_data_loader_n_workers.name)
         self._seed_parameter.remove_input_parameters()
+
+    def _get_flux_model_path(self) -> Path:
+        flux_patterns = [
+            "flux*.safetensors",  # Any flux model file
+            "diffusion_pytorch_model.safetensors",  # Standard diffusers format
+        ]
+        flux_model_path = self.get_model_file_path(flux_patterns, self._model_repo_parameter)
+        logger.info(f"Using FLUX model file at: {flux_model_path}")
+        return flux_model_path
+
+    def _get_ae_model_path(self) -> Path:
+        ae_patterns = [
+            "ae.safetensors",
+            "ae.sft",
+            "vae/*.safetensors",
+        ]
+        ae_path = self.get_model_file_path(ae_patterns, self._model_repo_parameter)
+        logger.info(f"Using AE model file at: {ae_path}")
+        return ae_path
+
+    def _get_clip_l_model_path(self) -> Path:
+        clip_l_patterns = [
+            "text_encoder/model.safetensors",
+            "text_encoder/model-00001-of-*.safetensors",  # Sharded model (will be merged)
+        ]
+        clip_l_path = self.get_model_file_path(clip_l_patterns, self._model_repo_parameter)
+        logger.info(f"Using CLIP-L model file at: {clip_l_path}")
+        return clip_l_path
+
+    def _get_t5xxl_model_path(self) -> Path:
+        t5xxl_patterns = [
+            "text_encoder_2/model.safetensors",
+            "text_encoder_2/model-00001-of-*.safetensors",  # Sharded model (will be merged)
+        ]
+        t5xxl_path = self.get_model_file_path(t5xxl_patterns, self._model_repo_parameter)
+        logger.info(f"Using T5XXL model file at: {t5xxl_path}")
+        return t5xxl_path
 
     def get_script_params(self) -> list[str]:
         hardcoded_params = [
@@ -224,31 +242,33 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             "--loss_type", "l2",
             '--model_prediction_type', 'raw',
         ]
+
         key_value_params = [
-            # TODO: Get the .tensorfile paths - https://github.com/griptape-ai/griptape-nodes-lora-training-library/issues/4
-            "--pretrained_model_name_or_path", self._node.get_parameter_value("flux_model"),
-            "--clip_l", self._node.get_parameter_value("text_encoder"),
-            "--t5xxl", self._node.get_parameter_value("text_encoder_2"),
-            "--ae", self._node.get_parameter_value("flux_model"), 
+            # Model file paths resolved from HuggingFace cache
+            "--pretrained_model_name_or_path", str(self._get_flux_model_path()),
+            "--clip_l", str(self._get_clip_l_model_path()),
+            "--t5xxl", str(self._get_t5xxl_model_path()),
+            "--ae", str(self._get_ae_model_path()),
+            # Training configuration
             "--dataset_config", self._node.get_parameter_value("dataset_config"),
             "--output_dir", self._node.get_parameter_value("output_dir"),
             "--output_name", self._node.get_parameter_value("output_name"),
             "--learning_rate", str(self._node.get_parameter_value("learning_rate")),
-            "--max_train_epochs", str(self._node.get_parameter_value("max_train_epochs")),
-            "--network_dim", str(self._node.get_parameter_value("network_dim")),
+            "--max_train_epochs", str(int(self._node.get_parameter_value("max_train_epochs"))),
+            "--network_dim", str(int(self._node.get_parameter_value("network_dim"))),
             "--network_alpha", str(self._node.get_parameter_value("network_alpha")),
+            "--mixed_precision", self._node.get_parameter_value("mixed_precision"),
             "--save_precision", self._node.get_parameter_value("save_precision"),
             "--guidance_scale", str(self._node.get_parameter_value("guidance_scale")),
-            "--max_data_loader_n_workers", str(self._node.get_parameter_value("max_data_loader_n_workers")),
-            "--seed", str(self._seed_parameter.get_seed()),
+            "--max_data_loader_n_workers", str(int(self._node.get_parameter_value("max_data_loader_n_workers"))),
+            "--seed", str(int(self._seed_parameter.get_seed())),
         ]
         params = hardcoded_params + key_value_params
         if self._node.get_parameter_value("full_bf16"):
             params.append("--full_bf16")
         if self._node.get_parameter_value("fp8_base"):
             params.append("--fp8_base")
-        if self._node.get_parameter_value("high_vram"):
-            # Note that the param has no underscore
+        if self._node.get_parameter_value("highvram"):
             params.append("--highvram")
         return params
     
