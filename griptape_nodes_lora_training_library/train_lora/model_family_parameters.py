@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from abc import ABC, abstractmethod
 from pathlib import Path
 from huggingface_hub import scan_cache_dir
@@ -9,6 +9,7 @@ from huggingface_hub import scan_cache_dir
 if TYPE_CHECKING:
     from train_lora.train_lora_node import TrainLoraNode
     from griptape_nodes.common.parameters.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
+    from griptape_nodes.exe_types.core_types import Parameter
 
 logger = logging.getLogger("diffusers_nodes_library")
 
@@ -26,6 +27,14 @@ class TrainLoraModelFamilyParameters(ABC):
 
     @abstractmethod
     def remove_input_parameters(self) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def after_value_set(self, parameter: Parameter, value: Any) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def preprocess(self) -> None:
         raise NotImplementedError
 
     @abstractmethod

@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from griptape_nodes.exe_types.core_types import Parameter
-from griptape_nodes.common.parameters.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
+from griptape_nodes.exe_types.param_components.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
 
 from train_lora.model_family_parameters import TrainLoraModelFamilyParameters
 

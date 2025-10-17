@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from griptape_nodes.common.parameters.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
-from griptape_nodes.common.parameters.seed_parameter import SeedParameter
+from griptape_nodes.exe_types.param_components.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
+from griptape_nodes.exe_types.param_components.seed_parameter import SeedParameter
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
@@ -190,6 +190,12 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         self._node.remove_parameter_by_name(self._highvram.name)
         self._node.remove_parameter_by_name(self._max_data_loader_n_workers.name)
         self._seed_parameter.remove_input_parameters()
+
+    def after_value_set(self, parameter: Parameter, value: Any) -> None:
+        self._seed_parameter.after_value_set(parameter, value)
+
+    def preprocess(self) -> None:
+        self._seed_parameter.preprocess()
 
     def _get_flux_model_path(self) -> Path:
         flux_patterns = [
