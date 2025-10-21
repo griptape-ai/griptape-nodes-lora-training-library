@@ -55,7 +55,7 @@ class GenerateDatasetNode(SuccessFailureNode):
         self.add_parameter(
             ParameterList(
                 name="images",
-                input_types=["ImageUrlArtifact", "ImageArtifact", "list"],
+                input_types=["ImageUrlArtifact", "ImageArtifact"],
                 default_value=[],
                 allowed_modes={ParameterMode.INPUT},
                 tooltip="Images to include in the dataset.",
