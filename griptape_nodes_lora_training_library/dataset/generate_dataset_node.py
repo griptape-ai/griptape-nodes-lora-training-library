@@ -53,26 +53,9 @@ class GenerateDatasetNode(SuccessFailureNode):
         )
 
         self.add_parameter(
-            Parameter(
-                name="dataset_folder",
-                allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
-                type="str",
-                default_value="",
-                tooltip="The full path to the desired dataset directory.",
-                traits={
-                    FileSystemPicker(
-                        allow_files=False,
-                        allow_directories=True,
-                        multiple=False,
-                    )   
-                },
-            )
-        )
-
-        self.add_parameter(
             ParameterList(
                 name="images",
-                input_types=["ImageUrlArtifact", "ImageArtifact"],
+                input_types=["ImageUrlArtifact", "ImageArtifact", "list"],
                 default_value=[],
                 allowed_modes={ParameterMode.INPUT},
                 tooltip="Images to include in the dataset.",
@@ -101,6 +84,23 @@ class GenerateDatasetNode(SuccessFailureNode):
                 type="int",
                 default_value=8,
                 tooltip="The number of times to repeat the dataset during training.",
+            )
+        )
+
+        self.add_parameter(
+            Parameter(
+                name="dataset_folder",
+                allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
+                type="str",
+                default_value="",
+                tooltip="The full path where the generated dataset directory will be created.",
+                traits={
+                    FileSystemPicker(
+                        allow_files=False,
+                        allow_directories=True,
+                        multiple=False,
+                    )   
+                },
             )
         )
 
