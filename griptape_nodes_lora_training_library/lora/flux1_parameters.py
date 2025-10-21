@@ -31,11 +31,11 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             parameter_name="flux_model",
         )
         self._dataset_config = Parameter(
-            name="dataset_config",
+            name="dataset_config_path",
             allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
             type="str",
             default_value="",
-            tooltip="The full path to the loaded file.",
+            tooltip="The full path to the dataset configuration file.",
             traits={
                     FileSystemPicker(
                         allow_files=True,
@@ -52,7 +52,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
             type="str",
             default_value="",
-            tooltip="The full path to the loaded file.",
+            tooltip="The full path to the output directory.",
             traits={
                     FileSystemPicker(
                         allow_files=False,
