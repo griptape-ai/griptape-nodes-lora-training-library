@@ -84,6 +84,9 @@ class GenerateDatasetNode(SuccessFailureNode):
                 type="int",
                 default_value=1,
                 tooltip="The number of times to repeat the dataset during training.",
+                ui_options={
+                    "hide": True,
+                },
             )
         )
 
