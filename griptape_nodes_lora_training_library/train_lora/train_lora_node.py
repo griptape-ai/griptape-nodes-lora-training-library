@@ -117,16 +117,13 @@ class TrainLoraNode(SuccessFailureNode):
         command.extend(self.params.model_family_parameters.get_script_params())
         logger.info(f"Generated command: {command}")
         return command
-    
-    def after_value_set(self, parameter: Parameter, value: Any) -> None:
-        self.params.after_value_set(parameter, value)
 
     def preprocess(self) -> None:
+        self._clear_execution_status()
         self.params.preprocess()
 
     def process(self) -> None:
-        self._clear_execution_status()
-
+        self.preprocess()
         logger.warning("Starting Lora training process...")
 
         try:

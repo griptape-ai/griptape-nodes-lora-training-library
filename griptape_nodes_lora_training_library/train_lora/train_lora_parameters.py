@@ -6,7 +6,6 @@ from abc import ABC
 
 from train_lora.model_family_parameters import TrainLoraModelFamilyParameters
 from train_lora.flux1_parameters import FLUX1Parameters
-from train_lora.sd3_parameters import SD3Parameters
 
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.traits.options import Options
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("griptape_nodes_lora_training_library")
 
 
-MODEL_FAMILIES = ["FLUX.1", "SD3"]
+MODEL_FAMILIES = ["FLUX.1"]
 
 class TrainLoraParameters(ABC):
     START_PARAMS: ClassVar = ["lora", "model_family"]
@@ -58,8 +57,6 @@ class TrainLoraParameters(ABC):
         match model_family:
             case "FLUX.1":
                 self._model_family_parameters = FLUX1Parameters(self._node)
-            case "SD3":
-                self._model_family_parameters = SD3Parameters(self._node)
             case _:
                 msg = f"Unsupported model family: {model_family}"
                 logger.error(msg)
