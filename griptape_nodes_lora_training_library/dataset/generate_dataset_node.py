@@ -82,7 +82,7 @@ class GenerateDatasetNode(SuccessFailureNode):
                 name="num_repeats",
                 allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
                 type="int",
-                default_value=8,
+                default_value=1,
                 tooltip="The number of times to repeat the dataset during training.",
             )
         )
