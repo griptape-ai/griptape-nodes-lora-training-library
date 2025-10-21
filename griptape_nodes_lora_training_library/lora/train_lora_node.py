@@ -7,7 +7,7 @@ from griptape_nodes.exe_types.core_types import Parameter, ParameterGroup, Param
 from griptape_nodes.exe_types.node_types import SuccessFailureNode
 from griptape_nodes.traits.options import Options
 
-from train_lora.train_lora_parameters import TrainLoraParameters
+from lora.train_lora_parameters import TrainLoraParameters
 
 logger = logging.getLogger("griptape_nodes_lora_training_library")
 

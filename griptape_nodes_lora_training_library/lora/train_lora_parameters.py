@@ -4,14 +4,14 @@ import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 from abc import ABC
 
-from train_lora.model_family_parameters import TrainLoraModelFamilyParameters
-from train_lora.flux1_parameters import FLUX1Parameters
+from lora.model_family_parameters import TrainLoraModelFamilyParameters
+from lora.flux1_parameters import FLUX1Parameters
 
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.traits.options import Options
 
 if TYPE_CHECKING:
-    from train_lora.train_lora_node import TrainLoraNode
+    from lora.train_lora_node import TrainLoraNode
 
 logger = logging.getLogger("griptape_nodes_lora_training_library")
 

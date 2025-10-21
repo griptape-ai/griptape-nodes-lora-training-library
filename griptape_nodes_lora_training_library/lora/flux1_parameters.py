@@ -10,10 +10,10 @@ from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
 
-from train_lora.model_family_parameters import TrainLoraModelFamilyParameters
+from lora.model_family_parameters import TrainLoraModelFamilyParameters
 
 if TYPE_CHECKING:
-    from train_lora.train_lora_node import TrainLoraNode
+    from lora.train_lora_node import TrainLoraNode
 
 logger = logging.getLogger("diffusers_nodes_library")
 

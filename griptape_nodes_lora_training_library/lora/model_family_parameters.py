@@ -7,7 +7,7 @@ from pathlib import Path
 from huggingface_hub import scan_cache_dir
 
 if TYPE_CHECKING:
-    from train_lora.train_lora_node import TrainLoraNode
+    from lora.train_lora_node import TrainLoraNode
     from griptape_nodes.common.parameters.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
     from griptape_nodes.exe_types.core_types import Parameter
 
