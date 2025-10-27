@@ -203,7 +203,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             "diffusion_pytorch_model.safetensors",  # Standard diffusers format
         ]
         flux_model_path = self.get_model_file_path(flux_patterns, self._model_repo_parameter)
-        logger.info(f"Using FLUX model file at: {flux_model_path}")
+        logger.debug(f"Using FLUX model file at: {flux_model_path}")
         return flux_model_path
 
     def _get_ae_model_path(self) -> Path:
@@ -213,7 +213,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             "vae/*.safetensors",
         ]
         ae_path = self.get_model_file_path(ae_patterns, self._model_repo_parameter)
-        logger.info(f"Using AE model file at: {ae_path}")
+        logger.debug(f"Using AE model file at: {ae_path}")
         return ae_path
 
     def _get_clip_l_model_path(self) -> Path:
@@ -222,7 +222,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             "text_encoder/model-00001-of-*.safetensors",  # Sharded model (will be merged)
         ]
         clip_l_path = self.get_model_file_path(clip_l_patterns, self._model_repo_parameter)
-        logger.info(f"Using CLIP-L model file at: {clip_l_path}")
+        logger.debug(f"Using CLIP-L model file at: {clip_l_path}")
         return clip_l_path
 
     def _get_t5xxl_model_path(self) -> Path:
@@ -231,7 +231,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             "text_encoder_2/model-00001-of-*.safetensors",  # Sharded model (will be merged)
         ]
         t5xxl_path = self.get_model_file_path(t5xxl_patterns, self._model_repo_parameter)
-        logger.info(f"Using T5XXL model file at: {t5xxl_path}")
+        logger.debug(f"Using T5XXL model file at: {t5xxl_path}")
         return t5xxl_path
 
     def get_script_params(self) -> list[str]:

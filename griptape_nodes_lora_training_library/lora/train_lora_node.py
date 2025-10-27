@@ -94,7 +94,7 @@ class TrainLoraNode(SuccessFailureNode):
     def _get_library_env_python(self) -> Path:
         python_exe = Path(__file__).parent.parent / ".venv" / "Scripts" / "python.exe"
         if python_exe.exists():
-            logger.info(f"Python executable found at: {python_exe}")
+            logger.debug(f"Python executable found at: {python_exe}")
             return python_exe
         else:
             raise FileNotFoundError(f"Python executable not found in the expected location: {python_exe}")
@@ -115,7 +115,7 @@ class TrainLoraNode(SuccessFailureNode):
             str(script_path)
         ]
         command.extend(self.params.model_family_parameters.get_script_params())
-        logger.info(f"Generated command: {command}")
+        logger.debug(f"Generated command: {command}")
         return command
 
     def preprocess(self) -> None:

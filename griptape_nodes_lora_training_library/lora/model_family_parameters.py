@@ -91,7 +91,7 @@ class TrainLoraModelFamilyParameters(ABC):
                     shard_pattern = pattern.split('/')[-1] if '/' in pattern else pattern
                     shard_files = list(search_dir.glob(shard_pattern))
                     if shard_files:
-                        logger.info(f"Found sharded model matching {pattern}")
+                        logger.debug(f"Found sharded model matching {pattern}")
                         return self._merge_sharded_safetensors(shard_files[0])
                 continue
 
@@ -136,7 +136,7 @@ class TrainLoraModelFamilyParameters(ABC):
 
         # If merged file already exists, return it
         if output_safetensors.exists():
-            logger.info(f"Using existing merged safetensors file: {output_safetensors}")
+            logger.debug(f"Using existing merged safetensors file: {output_safetensors}")
             return output_safetensors
 
         # Parse the shard pattern (e.g., model-00001-of-00002.safetensors)
@@ -147,8 +147,8 @@ class TrainLoraModelFamilyParameters(ABC):
         prefix = match.group(1)
         total_shards = int(match.group(3))
 
-        logger.info(f"Merging {total_shards} safetensors shards into {output_safetensors.name}...")
-        logger.info(f"This is a one-time operation and may take a minute...")
+        logger.debug(f"Merging {total_shards} safetensors shards into {output_safetensors.name}...")
+        logger.debug(f"This is a one-time operation and may take a minute...")
 
         # Find all shard files
         shard_files = []
@@ -157,25 +157,25 @@ class TrainLoraModelFamilyParameters(ABC):
             if not shard_file.exists():
                 raise FileNotFoundError(f"Missing shard file: {shard_file}")
             shard_files.append(shard_file)
-            logger.info(f"  Found shard {i}/{total_shards}: {shard_file.name}")
+            logger.debug(f"  Found shard {i}/{total_shards}: {shard_file.name}")
 
         # Merge all shards into one state dict
         merged_state_dict = {}
         for shard_file in shard_files:
-            logger.info(f"Loading {shard_file.name}...")
+            logger.debug(f"Loading {shard_file.name}...")
             shard_data = load_file(str(shard_file))
             merged_state_dict.update(shard_data)
             del shard_data
             gc.collect()
 
-        logger.info(f"Saving merged model to {output_safetensors}...")
+        logger.debug(f"Saving merged model to {output_safetensors}...")
         save_file(merged_state_dict, str(output_safetensors))
 
         # Clean up
         del merged_state_dict
         gc.collect()
 
-        logger.info(f"✓ Successfully merged {total_shards} shards into: {output_safetensors}")
+        logger.debug(f"✓ Successfully merged {total_shards} shards into: {output_safetensors}")
         return output_safetensors
 
     def get_model_file_path(self, patterns: list[str], repo_parameter: HuggingFaceRepoParameter) -> Path:
