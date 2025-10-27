@@ -75,6 +75,13 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             default_value=1e-6,
             tooltip="The learning rate for training.",
         )
+        self._save_every_n_epochs = Parameter(
+            name="save_every_n_epochs",
+            allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
+            type="int",
+            default_value=1,
+            tooltip="Save the model every N epochs.",
+        )
         self._max_train_epochs = Parameter(
             name="max_train_epochs",
             allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
@@ -161,6 +168,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         self._node.add_parameter(self._output_dir)
         self._node.add_parameter(self._output_name)
         self._node.add_parameter(self._learning_rate)
+        self._node.add_parameter(self._save_every_n_epochs)
         self._node.add_parameter(self._max_train_epochs)
         self._node.add_parameter(self._network_dim)
         self._node.add_parameter(self._network_alpha)
@@ -179,6 +187,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         self._node.remove_parameter_element_by_name(self._output_dir.name)
         self._node.remove_parameter_element_by_name(self._output_name.name)
         self._node.remove_parameter_element_by_name(self._learning_rate.name)
+        self._node.remove_parameter_element_by_name(self._save_every_n_epochs.name)
         self._node.remove_parameter_element_by_name(self._max_train_epochs.name)
         self._node.remove_parameter_element_by_name(self._network_dim.name)
         self._node.remove_parameter_element_by_name(self._network_alpha.name)
@@ -260,6 +269,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             "--output_dir", self._node.get_parameter_value("output_dir"),
             "--output_name", self._node.get_parameter_value("output_name"),
             "--learning_rate", str(self._node.get_parameter_value("learning_rate")),
+            "--save_every_n_epochs", str(int(self._node.get_parameter_value("save_every_n_epochs"))),
             "--max_train_epochs", str(int(self._node.get_parameter_value("max_train_epochs"))),
             "--network_dim", str(int(self._node.get_parameter_value("network_dim"))),
             "--network_alpha", str(self._node.get_parameter_value("network_alpha")),
