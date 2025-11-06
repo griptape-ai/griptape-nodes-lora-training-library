@@ -71,6 +71,9 @@ class TrainLoraParameters(ABC):
         if parameter.name == "model_family" and self.did_model_family_change:
             self.regenerate_elements_for_model_family()
 
+    def preprocess(self) -> None:
+        self.model_family_parameters.preprocess()
+
     def regenerate_elements_for_model_family(self) -> None:
         self._node.save_ui_options()
 

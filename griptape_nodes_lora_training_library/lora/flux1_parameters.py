@@ -265,7 +265,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             "--t5xxl", str(self._get_t5xxl_model_path()),
             "--ae", str(self._get_ae_model_path()),
             # Training configuration
-            "--dataset_config", self._node.get_parameter_value("dataset_config"),
+            "--dataset_config", self._node.get_parameter_value("dataset_config_path"),
             "--output_dir", self._node.get_parameter_value("output_dir"),
             "--output_name", self._node.get_parameter_value("output_name"),
             "--learning_rate", str(self._node.get_parameter_value("learning_rate")),

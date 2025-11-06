@@ -3,9 +3,8 @@ from pathlib import Path
 import subprocess
 from typing import Any
 
-from griptape_nodes.exe_types.core_types import Parameter, ParameterGroup, ParameterMode
+from griptape_nodes.exe_types.core_types import Parameter
 from griptape_nodes.exe_types.node_types import SuccessFailureNode
-from griptape_nodes.traits.options import Options
 
 from lora.train_lora_parameters import TrainLoraParameters
 
