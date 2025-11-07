@@ -72,7 +72,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             name="learning_rate",
             allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
             type="float",
-            default_value=1e-6,
+            default_value=1e-4,
             tooltip="The learning rate for training.",
         )
         self._save_every_n_epochs = Parameter(
@@ -100,7 +100,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             name="network_alpha",
             allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
             type="float",
-            default_value=1e-3,
+            default_value=1,
             tooltip="The alpha parameter for the network.",
         )
         self._full_bf16 = Parameter(
