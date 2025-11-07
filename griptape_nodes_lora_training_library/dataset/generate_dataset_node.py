@@ -85,6 +85,16 @@ class GenerateDatasetNode(SuccessFailureNode):
 
         self.add_parameter(
             Parameter(
+                name="trigger_phrase",
+                allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
+                type="str",
+                default_value="",
+                tooltip="Optional trigger phrase to prepend to all captions. Leave empty to not use a trigger phrase.",
+            )
+        )
+
+        self.add_parameter(
+            Parameter(
                 name="image_resolution",
                 allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
                 type="int",
@@ -221,8 +231,6 @@ class GenerateDatasetNode(SuccessFailureNode):
             if isinstance(image_artifact, ImageUrlArtifact):
                 image_artifact = load_image_from_url_artifact(image_artifact)
 
-            logger.warning(image_artifact.format)
-
             # Use existing filename if available, otherwise generate one
             if hasattr(image_artifact, 'name') and image_artifact.name:
                 image_filename = image_artifact.name
@@ -248,6 +256,11 @@ class GenerateDatasetNode(SuccessFailureNode):
                 caption_text = self._generate_caption_for_image(image_artifact, agent, extraction_engine)
             else:
                 caption_text = self.get_parameter_value("captions")[i]
+
+            # Prepend trigger phrase if provided
+            trigger_phrase = self.get_parameter_value("trigger_phrase")
+            if trigger_phrase and trigger_phrase.strip():
+                caption_text = f"{trigger_phrase.strip()}, {caption_text}"
 
             # Write the caption file directly to images folder (FLUX style)
             base_name = Path(image_filename).stem
