@@ -40,19 +40,6 @@ class TrainLoraParameters(ABC):
         )
         self.model_family_parameters.add_input_parameters()
 
-    def add_output_parameters(self) -> None:
-        # TODO: Make this a Lora output
-        self._node.add_parameter(
-            Parameter(
-                name="lora",
-                output_type="Lora",
-                default_value=None,
-                tooltip="Trained Lora",
-                allowed_modes={ParameterMode.OUTPUT},
-                ui_options={"display_name": "lora"},
-            )
-        )
-
     def set_model_family_parameters(self, model_family: str) -> None:
         match model_family:
             case "FLUX.1":

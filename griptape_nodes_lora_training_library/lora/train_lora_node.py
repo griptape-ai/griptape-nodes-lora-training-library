@@ -18,7 +18,6 @@ class TrainLoraNode(SuccessFailureNode):
         super().__init__(**kwargs)
 
         self.params = TrainLoraParameters(self)
-        self.params.add_output_parameters()
         self.params.add_input_parameters()
 
         self._create_status_parameters(
@@ -143,6 +142,13 @@ class TrainLoraNode(SuccessFailureNode):
             
         try:
             subprocess.run(args=command)
+
+            # Set the lora_path output parameter
+            output_dir = self.get_parameter_value("output_dir")
+            output_name = self.get_parameter_value("output_name")
+            lora_path = Path(output_dir) / f"{output_name}.safetensors"
+            self.set_parameter_value("lora_path", str(lora_path))
+
             success_msg = f"Lora training executed successfully."
             self._set_status_results(was_successful=True, result_details=f"SUCCESS: {success_msg}")
         except Exception as e:
