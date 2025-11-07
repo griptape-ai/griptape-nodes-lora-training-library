@@ -242,10 +242,10 @@ class GenerateDatasetNode(SuccessFailureNode):
             # Only save if image doesn't already exist in images folder
             source_path = dataset_folder / image_filename
             if source_path.exists() and source_path != image_path:
-                # Move existing image from dataset_folder to images_folder
+                # Copy existing image from dataset_folder to images_folder
                 import shutil
-                shutil.move(str(source_path), str(image_path))
-                logger.debug(f"Moved existing image to {image_path}")
+                shutil.copy2(str(source_path), str(image_path))
+                logger.debug(f"Copied existing image to {image_path}")
             elif not image_path.exists():
                 # Save the image artifact to disk
                 with open(image_path, 'wb') as f:
