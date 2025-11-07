@@ -8,6 +8,7 @@ from schema import Literal, Schema
 from griptape.artifacts import ImageArtifact, ImageUrlArtifact, ListArtifact
 from griptape.drivers.prompt.griptape_cloud_prompt_driver import GriptapeCloudPromptDriver
 from griptape.engines import JsonExtractionEngine
+from griptape.loaders import ImageLoader
 from griptape.structures import Agent
 
 from griptape_nodes.exe_types.core_types import Parameter, ParameterList, ParameterMode
@@ -166,11 +167,35 @@ class GenerateDatasetNode(SuccessFailureNode):
         logger.debug(f"Generated {len(tags)} tags for {image_artifact}: {caption_text}")
         return caption_text
 
-    def create_dataset(self, dataset_folder: Path, images: list[ImageArtifact | ImageUrlArtifact]):
+    def create_dataset(self, dataset_folder: Path, images: list[ImageArtifact | ImageUrlArtifact] | None):
         dataset_folder.mkdir(parents=True, exist_ok=True)
 
         images_folder = dataset_folder / "images"
         images_folder.mkdir(parents=True, exist_ok=True)
+
+        # If no images provided, scan the dataset_folder for existing images
+        if not images or len(images) == 0:
+            image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'}
+            existing_image_files = [
+                f for f in dataset_folder.iterdir()
+                if f.is_file() and f.suffix.lower() in image_extensions
+            ]
+
+            if not existing_image_files:
+                raise ValueError(f"No images found in dataset folder: {dataset_folder}")
+
+            logger.debug(f"Found {len(existing_image_files)} existing images in dataset folder")
+
+            images = []
+            image_loader = ImageLoader()
+            for image_file in existing_image_files:
+                with open(image_file, 'rb') as f:
+                    image_data = f.read()
+
+                # Parse image using Griptape's ImageLoader
+                image_artifact = image_loader.parse(image_data)
+                image_artifact.name = image_file.name
+                images.append(image_artifact)
 
         if self.get_parameter_value("generate_captions"):
             agent = self.get_parameter_value("agent")
@@ -198,14 +223,26 @@ class GenerateDatasetNode(SuccessFailureNode):
 
             logger.warning(image_artifact.format)
 
-            # Generate a filename for the image using the artifact's format
-            image_filename = f"image_{i:04d}.{image_artifact.format}"
+            # Use existing filename if available, otherwise generate one
+            if hasattr(image_artifact, 'name') and image_artifact.name:
+                image_filename = image_artifact.name
+            else:
+                image_filename = f"image_{i:04d}.{image_artifact.format}"
+
             image_path = images_folder / image_filename
 
-            # Save the image artifact to disk
-            with open(image_path, 'wb') as f:
-                f.write(image_artifact.to_bytes())
-            logger.debug(f"Saved image to {image_path}")
+            # Only save if image doesn't already exist in images folder
+            source_path = dataset_folder / image_filename
+            if source_path.exists() and source_path != image_path:
+                # Move existing image from dataset_folder to images_folder
+                import shutil
+                shutil.move(str(source_path), str(image_path))
+                logger.debug(f"Moved existing image to {image_path}")
+            elif not image_path.exists():
+                # Save the image artifact to disk
+                with open(image_path, 'wb') as f:
+                    f.write(image_artifact.to_bytes())
+                logger.debug(f"Saved image to {image_path}")
 
             if self.get_parameter_value("generate_captions"):
                 caption_text = self._generate_caption_for_image(image_artifact, agent, extraction_engine)
@@ -252,11 +289,19 @@ keep_tokens = 0
 
         dataset_folder_path = Path(dataset_folder)
 
+        # Check if images exist in dataset_folder when no images are provided via input
         if not images or len(images) == 0:
-            self._set_status_results(was_successful=False, result_details="No images provided. Please connect images to the images input.")
-            return
-        
-        if not self.get_parameter_value("generate_captions"):
+            image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'}
+            existing_images = [
+                f for f in dataset_folder_path.iterdir()
+                if f.is_file() and f.suffix.lower() in image_extensions
+            ] if dataset_folder_path.exists() else []
+
+            if not existing_images:
+                self._set_status_results(was_successful=False, result_details="No images provided via input and no images found in dataset folder. Please connect images to the images input or place images in the dataset folder.")
+                return
+
+        if not self.get_parameter_value("generate_captions") and (images and len(images) > 0):
             captions = self.get_parameter_value("captions")
             if not captions or len(captions) < len(images):
                 self._set_status_results(was_successful=False, result_details="Number of images and captions do not match. Please provide more captions or enable caption generation.")
