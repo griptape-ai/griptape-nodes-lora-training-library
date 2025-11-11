@@ -31,7 +31,7 @@ Train custom LoRA (Low-Rank Adaptation) models for FLUX.1 diffusion models withi
    cd `gtn config show workspace_directory`
    
    # Clone or download this library
-   git clone https://github.com/your-username/griptape-nodes-lora-training-library.git
+   git clone --recurse-submodules https://github.com/your-username/griptape-nodes-lora-training-library.git
    ```
 
 2. **Add the library** in the Griptape Nodes Editor:
