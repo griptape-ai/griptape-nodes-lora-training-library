@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
 from abc import ABC
-
-from lora.model_family_parameters import TrainLoraModelFamilyParameters
-from lora.flux1_parameters import FLUX1Parameters
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.traits.options import Options
+from lora.flux1_parameters import FLUX1Parameters
 
 if TYPE_CHECKING:
+    from lora.model_family_parameters import TrainLoraModelFamilyParameters
     from lora.train_lora_node import TrainLoraNode
 
 logger = logging.getLogger("griptape_nodes_lora_training_library")
@@ -18,9 +17,11 @@ logger = logging.getLogger("griptape_nodes_lora_training_library")
 
 MODEL_FAMILIES = ["FLUX.1"]
 
+
 class TrainLoraParameters(ABC):
     START_PARAMS: ClassVar = ["lora", "model_family"]
     END_PARAMS: ClassVar = ["Status"]
+
     def __init__(self, node: TrainLoraNode):
         self._node = node
         self._model_family_parameters: TrainLoraModelFamilyParameters
@@ -94,6 +95,6 @@ class TrainLoraParameters(ABC):
 
     def get_model_family(self) -> str:
         return self._node.get_parameter_value("model_family")
-    
+
     def validate_before_node_run(self) -> list[Exception] | None:
         return self.model_family_parameters.validate_before_node_run()

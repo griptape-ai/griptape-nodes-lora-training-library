@@ -1,3 +1,4 @@
+__pycache__/
 .env
 .venv
 griptape_nodes_lora_training_library/__pycache__/

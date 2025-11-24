@@ -1,1 +1,1 @@
-"""Lora Nodes in the Library"""
+"""LoRA Nodes in the Library"""

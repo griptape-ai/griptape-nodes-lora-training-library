@@ -2,29 +2,26 @@ import logging
 from pathlib import Path
 from typing import Any
 
-
-from schema import Literal, Schema
-
+from error_utils import try_throw_error
 from griptape.artifacts import ImageArtifact, ImageUrlArtifact, ListArtifact
 from griptape.drivers.prompt.griptape_cloud_prompt_driver import GriptapeCloudPromptDriver
 from griptape.engines import JsonExtractionEngine
 from griptape.loaders import ImageLoader
 from griptape.structures import Agent
-
-from griptape_nodes.exe_types.core_types import Parameter, ParameterList, ParameterMode
-from griptape_nodes.exe_types.node_types import SuccessFailureNode
+from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
+from griptape_nodes.exe_types.node_types import NodeDependencies, SuccessFailureNode
 from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
-
-from error_utils import try_throw_error
 from image_utils import load_image_from_url_artifact
+from schema import Literal, Schema
 
 logger = logging.getLogger("griptape_nodes_lora_training_library")
 
 
 API_KEY_ENV_VAR = "GT_CLOUD_API_KEY"
 RESOLUTION_OPTIONS = [512, 1024]
+
 
 class GenerateDatasetNode(SuccessFailureNode):
     def __init__(self, **kwargs) -> None:
@@ -65,7 +62,7 @@ class GenerateDatasetNode(SuccessFailureNode):
                 name="agent_prompt",
                 allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
                 type="str",
-                default_value = "Describe this image with descriptive tags. Include details about the subject, setting, colors, mood, and style.",
+                default_value="Describe this image with descriptive tags. Include details about the subject, setting, colors, mood, and style.",
                 tooltip="The prompt to use for the agent when describing images.",
                 ui_options={
                     "multiline": True,
@@ -100,11 +97,7 @@ class GenerateDatasetNode(SuccessFailureNode):
                 type="int",
                 default_value=RESOLUTION_OPTIONS[1],
                 tooltip="The resolution of the images in the dataset.",
-                traits={
-                    Options(
-                        choices=RESOLUTION_OPTIONS
-                    )
-                }
+                traits={Options(choices=RESOLUTION_OPTIONS)},
             )
         )
 
@@ -133,7 +126,7 @@ class GenerateDatasetNode(SuccessFailureNode):
                         allow_files=False,
                         allow_directories=True,
                         multiple=False,
-                    )   
+                    )
                 },
             )
         )
@@ -164,9 +157,27 @@ class GenerateDatasetNode(SuccessFailureNode):
                 self.hide_parameter_by_name("agent_prompt")
                 self.show_parameter_by_name("captions")
 
-    def _generate_caption_for_image(self, image_artifact: ImageArtifact, agent: Agent, extraction_engine: JsonExtractionEngine) -> str:
+    def get_node_dependencies(self) -> NodeDependencies | None:
+        dataset_folder = self.get_parameter_value("dataset_folder")
+        static_files = set()
+
+        if dataset_folder:
+            dataset_path = Path(dataset_folder)
+            if dataset_path.exists() and dataset_path.is_dir():
+                # Recursively iterate over all files in the dataset folder
+                for file_path in dataset_path.rglob("*"):
+                    if file_path.is_file():
+                        static_files.add(str(file_path))
+
+        return NodeDependencies(
+            static_files=static_files,
+        )
+
+    def _generate_caption_for_image(
+        self, image_artifact: ImageArtifact, agent: Agent, extraction_engine: JsonExtractionEngine
+    ) -> str:
         # Use the agent to generate descriptive tags for the image
-        prompt = f"{self.get_parameter_value("agent_prompt")} The output must be a single JSON object with a 'tags' field containing a list of tags."
+        prompt = f"{self.get_parameter_value('agent_prompt')} The output must be a single JSON object with a 'tags' field containing a list of tags."
         agent.run([prompt, image_artifact])
         try_throw_error(agent.output)
         extraction_result = extraction_engine.extract_artifacts(ListArtifact([agent.output]))
@@ -185,10 +196,9 @@ class GenerateDatasetNode(SuccessFailureNode):
 
         # If no images provided, scan the dataset_folder for existing images
         if not images or len(images) == 0:
-            image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'}
+            image_extensions = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"}
             existing_image_files = [
-                f for f in dataset_folder.iterdir()
-                if f.is_file() and f.suffix.lower() in image_extensions
+                f for f in dataset_folder.iterdir() if f.is_file() and f.suffix.lower() in image_extensions
             ]
 
             if not existing_image_files:
@@ -199,7 +209,7 @@ class GenerateDatasetNode(SuccessFailureNode):
             images = []
             image_loader = ImageLoader()
             for image_file in existing_image_files:
-                with open(image_file, 'rb') as f:
+                with open(image_file, "rb") as f:
                     image_data = f.read()
 
                 # Parse image using Griptape's ImageLoader
@@ -218,12 +228,9 @@ class GenerateDatasetNode(SuccessFailureNode):
                 agent = Agent(prompt_driver=prompt_driver)
 
             # Create a JSON extraction engine to extract structured tags
-            tag_schema = Schema({
-                Literal("tags", description="List of descriptive tags for the image"): [str]
-            })
+            tag_schema = Schema({Literal("tags", description="List of descriptive tags for the image"): [str]})
             extraction_engine = JsonExtractionEngine(
-                prompt_driver=agent.prompt_driver,
-                template_schema=tag_schema.json_schema("TagSchema")
+                prompt_driver=agent.prompt_driver, template_schema=tag_schema.json_schema("TagSchema")
             )
 
         for i, image_artifact in enumerate(images):
@@ -232,7 +239,7 @@ class GenerateDatasetNode(SuccessFailureNode):
                 image_artifact = load_image_from_url_artifact(image_artifact)
 
             # Use existing filename if available, otherwise generate one
-            if hasattr(image_artifact, 'name') and image_artifact.name:
+            if hasattr(image_artifact, "name") and image_artifact.name:
                 image_filename = image_artifact.name
             else:
                 image_filename = f"image_{i:04d}.{image_artifact.format}"
@@ -244,11 +251,12 @@ class GenerateDatasetNode(SuccessFailureNode):
             if source_path.exists() and source_path != image_path:
                 # Copy existing image from dataset_folder to images_folder
                 import shutil
+
                 shutil.copy2(str(source_path), str(image_path))
                 logger.debug(f"Copied existing image to {image_path}")
             elif not image_path.exists():
                 # Save the image artifact to disk
-                with open(image_path, 'wb') as f:
+                with open(image_path, "wb") as f:
                     f.write(image_artifact.to_bytes())
                 logger.debug(f"Saved image to {image_path}")
 
@@ -268,7 +276,7 @@ class GenerateDatasetNode(SuccessFailureNode):
             (images_folder / caption_filename).write_text(caption_text)
 
         return
-    
+
     def generate_toml(self, output_folder: Path, resolution: int, num_repeats: int) -> Path:
         images_folder = output_folder / "images"
         toml = f"""[general]
@@ -304,29 +312,33 @@ keep_tokens = 0
 
         # Check if images exist in dataset_folder when no images are provided via input
         if not images or len(images) == 0:
-            image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'}
-            existing_images = [
-                f for f in dataset_folder_path.iterdir()
-                if f.is_file() and f.suffix.lower() in image_extensions
-            ] if dataset_folder_path.exists() else []
+            image_extensions = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"}
+            existing_images = (
+                [f for f in dataset_folder_path.iterdir() if f.is_file() and f.suffix.lower() in image_extensions]
+                if dataset_folder_path.exists()
+                else []
+            )
 
             if not existing_images:
-                self._set_status_results(was_successful=False, result_details="No images provided via input and no images found in dataset folder. Please connect images to the images input or place images in the dataset folder.")
+                self._set_status_results(
+                    was_successful=False,
+                    result_details="No images provided via input and no images found in dataset folder. Please connect images to the images input or place images in the dataset folder.",
+                )
                 return
 
         if not self.get_parameter_value("generate_captions") and (images and len(images) > 0):
             captions = self.get_parameter_value("captions")
             if not captions or len(captions) < len(images):
-                self._set_status_results(was_successful=False, result_details="Number of images and captions do not match. Please provide more captions or enable caption generation.")
+                self._set_status_results(
+                    was_successful=False,
+                    result_details="Number of images and captions do not match. Please provide more captions or enable caption generation.",
+                )
                 return
 
         logger.debug(f"Processing {len(images)} images")
 
         try:
-            self.create_dataset(
-                dataset_folder_path,
-                images
-            )
+            self.create_dataset(dataset_folder_path, images)
             logger.debug(f"Dataset created at: {dataset_folder_path}")
         except Exception as e:
             logger.exception(f"Error while creating dataset: {str(e)}")
@@ -335,15 +347,16 @@ keep_tokens = 0
 
         try:
             dataset_toml_path = self.generate_toml(
-                output_folder=dataset_folder_path,
-                resolution=image_resolution,
-                num_repeats=num_repeats
+                output_folder=dataset_folder_path, resolution=image_resolution, num_repeats=num_repeats
             )
             logger.debug(f"Dataset configuration file generated at: {dataset_toml_path}")
         except Exception as e:
             logger.exception(f"Error while generating dataset.toml: {str(e)}")
-            self._set_status_results(was_successful=False, result_details=f"Error while generating dataset.toml: {str(e)}")
+            self._set_status_results(
+                was_successful=False, result_details=f"Error while generating dataset.toml: {str(e)}"
+            )
             return
 
         self.set_parameter_value("dataset_config_path", str(dataset_toml_path))
+        self.publish_update_to_parameter("dataset_config_path", str(dataset_toml_path))
         self._set_status_results(was_successful=True, result_details="Success")
