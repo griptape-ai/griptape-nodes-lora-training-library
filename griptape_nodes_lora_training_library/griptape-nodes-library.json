@@ -1,9 +1,9 @@
 {
-    "name": "Griptape Nodes Lora Training Library",
+    "name": "Griptape Nodes LoRA Training Library",
     "library_schema_version": "0.3.0",
     "metadata": {
         "author": "Griptape, Inc.",
-        "description": "Lora training for Griptape Nodes.",
+        "description": "LoRA training for Griptape Nodes.",
         "library_version": "0.60.0",
         "engine_version": "0.60.0",
         "tags": [
@@ -45,10 +45,10 @@
     },
     "categories": [
         {
-            "Lora": {
+            "LoRA": {
                 "color": "border-red-500",
-                "title": "Lora",
-                "description": "Does lora stuff",
+                "title": "LoRA",
+                "description": "LoRA dataset generation and model training nodes.",
                 "icon": "Scale"
             }
         }
@@ -59,8 +59,8 @@
             "file_path": "lora/train_lora_node.py",
             "metadata": {
                 "category": "lora",
-                "description": "Griptape Node that trains a Lora model.",
-                "display_name": "Train Lora"
+                "description": "Griptape Node that trains a LoRA model.",
+                "display_name": "Train LoRA"
             }
         },
         {
@@ -68,8 +68,8 @@
             "file_path": "dataset/generate_dataset_node.py",
             "metadata": {
                 "category": "lora",
-                "description": "Griptape Node that generates a dataset for Lora training.",
-                "display_name": "Generate Lora Dataset"
+                "description": "Griptape Node that generates a dataset for LoRA training.",
+                "display_name": "Generate LoRA Dataset"
             }
         }
     ]

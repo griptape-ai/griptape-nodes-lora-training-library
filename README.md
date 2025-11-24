@@ -42,7 +42,7 @@ Train custom LoRA (Low-Rank Adaptation) models for FLUX.1 diffusion models withi
    * Close the Settings Panel
    * Click on *Refresh Libraries*
 
-3. **Verify installation** by checking that the "Generate Lora Dataset" and "Train Lora" nodes appear in your Griptape Nodes interface in the "Lora" category.
+3. **Verify installation** by checking that the "Generate LoRA Dataset" and "Train LoRA" nodes appear in your Griptape Nodes interface in the "LoRA" category.
 
 ## 🔑 API Key Setup
 
@@ -73,7 +73,7 @@ The LoRA training process involves two main steps:
 
 ### Step 1: Generate Dataset
 
-1. **Add the "Generate Lora Dataset" node** to your workflow
+1. **Add the "Generate LoRA Dataset" node** to your workflow
 2. **Connect your images** to the `images` input (supports lists of ImageArtifact/ImageUrlArtifact)
 3. **Configure dataset settings**:
    - `generate_captions`: Enable AI-powered captioning (requires GT_CLOUD_API_KEY)
@@ -84,7 +84,7 @@ The LoRA training process involves two main steps:
 
 ### Step 2: Train LoRA
 
-1. **Add the "Train Lora" node** to your workflow
+1. **Add the "Train LoRA" node** to your workflow
 2. **Connect the dataset config** from the Generate Dataset node to `dataset_config_path`
 3. **Configure training parameters**:
    - `flux_model`: Choose your FLUX.1 model variant
@@ -97,7 +97,7 @@ The LoRA training process involves two main steps:
 
 ## 📋 Node Parameters
 
-### Generate Lora Dataset Node
+### Generate LoRA Dataset Node
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
@@ -109,7 +109,7 @@ The LoRA training process involves two main steps:
 | `image_resolution` | Integer | Training resolution | 1024 |
 | `dataset_folder` | String | Output dataset directory | Required |
 
-### Train Lora Node
+### Train LoRA Node
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|

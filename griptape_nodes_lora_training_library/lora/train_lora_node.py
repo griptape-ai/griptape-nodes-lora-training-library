@@ -21,7 +21,7 @@ class TrainLoraNode(SuccessFailureNode):
         self.params.add_input_parameters()
 
         self._create_status_parameters(
-            result_details_tooltip="Details about the Lora training result",
+            result_details_tooltip="Details about the LoRA training result",
             result_details_placeholder="Training result details will appear here.",
         )
         self._initializing = False
@@ -130,7 +130,7 @@ class TrainLoraNode(SuccessFailureNode):
 
     def process(self) -> None:
         self.preprocess()
-        logger.warning("Starting Lora training process...")
+        logger.warning("Starting LoRA training process...")
 
         try:
             library_env_python = self._get_library_env_python()
@@ -157,7 +157,7 @@ class TrainLoraNode(SuccessFailureNode):
             lora_path = Path(output_dir) / f"{output_name}.safetensors"
             self.set_parameter_value("lora_path", str(lora_path))
 
-            success_msg = f"Lora training executed successfully."
+            success_msg = f"LoRA training executed successfully."
             self._set_status_results(was_successful=True, result_details=f"SUCCESS: {success_msg}")
         except Exception as e:
             error_msg = f"Failed to execute lora training: {e}"

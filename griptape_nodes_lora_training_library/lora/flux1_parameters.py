@@ -66,7 +66,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
             type="str",
             default_value="my_flux_lora",
-            tooltip="The name of the output Lora.",
+            tooltip="The name of the output LoRA.",
         )
         self._learning_rate = Parameter(
             name="learning_rate",
