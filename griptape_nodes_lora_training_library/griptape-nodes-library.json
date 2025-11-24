@@ -1,76 +1,73 @@
 {
-    "name": "Griptape Nodes LoRA Training Library",
-    "library_schema_version": "0.3.0",
-    "metadata": {
-        "author": "Griptape, Inc.",
-        "description": "LoRA training for Griptape Nodes.",
-        "library_version": "0.60.0",
-        "engine_version": "0.60.0",
-        "tags": [
-            "Griptape",
-            "AI"
-            ],
-        "dependencies": {
-            "pip_dependencies": [
-                "torch==2.8.0",
-                "torchvision==0.23.0",
-                "accelerate==1.6.0",
-                "transformers==4.54.1",
-                "diffusers[torch]==0.32.1",
-                "ftfy==6.3.1",
-                "opencv-python==4.10.0.84",
-                "einops==0.7.0",
-                "bitsandbytes",
-                "lion-pytorch==0.2.3",
-                "schedulefree==1.4",
-                "pytorch-optimizer==3.7.0",
-                "prodigy-plus-schedule-free==1.9.2",
-                "prodigyopt==1.1.2",
-                "tensorboard",
-                "safetensors==0.4.5",
-                "toml==0.10.2",
-                "voluptuous==0.15.2",
-                "huggingface-hub==0.34.3",
-                "imagesize==1.4.1",
-                "numpy",
-                "rich==14.1.0",
-                "sentencepiece==0.2.1",
-                "xformers"
-            ],
-            "pip_install_flags": [
-                "--extra-index-url",
-                "https://download.pytorch.org/whl/cu128"
-            ]
-        }
+  "name": "Griptape Nodes LoRA Training Library",
+  "library_schema_version": "0.3.0",
+  "metadata": {
+    "author": "Griptape, Inc.",
+    "description": "LoRA training for Griptape Nodes.",
+    "library_version": "0.60.0",
+    "engine_version": "0.60.0",
+    "tags": ["Griptape", "AI"],
+    "dependencies": {
+      "pip_dependencies": [
+        "torch==2.9.0",
+        "torchvision==0.24.0",
+        "accelerate==1.6.0",
+        "transformers==4.54.1",
+        "diffusers[torch]==0.32.1",
+        "ftfy==6.3.1",
+        "opencv-python==4.10.0.84",
+        "einops==0.7.0",
+        "bitsandbytes",
+        "lion-pytorch==0.2.3",
+        "schedulefree==1.4",
+        "pytorch-optimizer==3.7.0",
+        "prodigy-plus-schedule-free==1.9.2",
+        "prodigyopt==1.1.2",
+        "tensorboard",
+        "safetensors==0.4.5",
+        "toml==0.10.2",
+        "voluptuous==0.15.2",
+        "huggingface-hub==0.34.3",
+        "imagesize==1.4.1",
+        "numpy",
+        "rich==14.1.0",
+        "sentencepiece==0.2.1",
+        "xformers"
+      ],
+      "pip_install_flags": [
+        "--extra-index-url",
+        "https://download.pytorch.org/whl/cu129"
+      ]
+    }
+  },
+  "categories": [
+    {
+      "LoRA": {
+        "color": "border-red-500",
+        "title": "LoRA",
+        "description": "LoRA dataset generation and model training nodes.",
+        "icon": "Scale"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "class_name": "TrainLoraNode",
+      "file_path": "lora/train_lora_node.py",
+      "metadata": {
+        "category": "lora",
+        "description": "Griptape Node that trains a LoRA model.",
+        "display_name": "Train LoRA"
+      }
     },
-    "categories": [
-        {
-            "LoRA": {
-                "color": "border-red-500",
-                "title": "LoRA",
-                "description": "LoRA dataset generation and model training nodes.",
-                "icon": "Scale"
-            }
-        }
-    ],
-    "nodes": [
-        {
-            "class_name": "TrainLoraNode",
-            "file_path": "lora/train_lora_node.py",
-            "metadata": {
-                "category": "lora",
-                "description": "Griptape Node that trains a LoRA model.",
-                "display_name": "Train LoRA"
-            }
-        },
-        {
-            "class_name": "GenerateDatasetNode",
-            "file_path": "dataset/generate_dataset_node.py",
-            "metadata": {
-                "category": "lora",
-                "description": "Griptape Node that generates a dataset for LoRA training.",
-                "display_name": "Generate LoRA Dataset"
-            }
-        }
-    ]
+    {
+      "class_name": "GenerateDatasetNode",
+      "file_path": "dataset/generate_dataset_node.py",
+      "metadata": {
+        "category": "lora",
+        "description": "Griptape Node that generates a dataset for LoRA training.",
+        "display_name": "Generate LoRA Dataset"
+      }
+    }
+  ]
 }
