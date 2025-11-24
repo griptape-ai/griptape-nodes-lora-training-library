@@ -1,11 +1,10 @@
 import logging
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from typing import Any
 
 from griptape_nodes.exe_types.core_types import Parameter
 from griptape_nodes.exe_types.node_types import SuccessFailureNode
-
 from lora.train_lora_parameters import TrainLoraParameters
 
 logger = logging.getLogger("griptape_nodes_lora_training_library")
@@ -74,28 +73,37 @@ class TrainLoraNode(SuccessFailureNode):
         )
 
         self.params.after_value_set(parameter, value)
-    
+
     def validate_before_node_run(self) -> list[Exception] | None:
         return self.params.validate_before_node_run()
-    
+
     def save_ui_options(self) -> None:
         """Save ui_options for all current parameters to cache."""
         for element in self.root_ui_element.children:
             parameter = self.get_parameter_by_name(element.name)
             if parameter is not None and parameter.ui_options:
                 self.ui_options_cache[parameter.name] = parameter.ui_options.copy()
-    
+
     def clear_ui_options_cache(self) -> None:
         """Clear the ui_options cache."""
         self.ui_options_cache.clear()
 
     def _get_library_env_python(self) -> Path:
-        python_exe = Path(__file__).parent.parent / ".venv" / "Scripts" / "python.exe"
-        if python_exe.exists():
-            logger.debug(f"Python executable found at: {python_exe}")
-            return python_exe
-        else:
-            raise FileNotFoundError(f"Python executable not found in the expected location: {python_exe}")
+        # Check for Windows path
+        python_exe_windows = Path(__file__).parent.parent / ".venv" / "Scripts" / "python.exe"
+        if python_exe_windows.exists():
+            logger.debug(f"Python executable found at: {python_exe_windows}")
+            return python_exe_windows
+
+        # Check for Unix-like (Mac/Linux) path
+        python_exe_unix = Path(__file__).parent.parent / ".venv" / "bin" / "python"
+        if python_exe_unix.exists():
+            logger.debug(f"Python executable found at: {python_exe_unix}")
+            return python_exe_unix
+
+        raise FileNotFoundError(
+            f"Python executable not found in expected locations: {python_exe_windows} or {python_exe_unix}"
+        )
 
     def _generate_command(self, library_env_python: Path) -> list[str]:
         script_name = self.params.model_family_parameters.get_script_name()
@@ -108,9 +116,11 @@ class TrainLoraNode(SuccessFailureNode):
             "-u",
             "-m",
             "accelerate.commands.launch",
-            "--num_cpu_threads_per_process", "1",
-            '--mixed_precision', self.params.model_family_parameters.get_mixed_precision(),
-            str(script_path)
+            "--num_cpu_threads_per_process",
+            "1",
+            "--mixed_precision",
+            self.params.model_family_parameters.get_mixed_precision(),
+            str(script_path),
         ]
         command.extend(self.params.model_family_parameters.get_script_params())
         logger.debug(f"Generated command: {command}")
@@ -131,7 +141,7 @@ class TrainLoraNode(SuccessFailureNode):
             self._set_status_results(was_successful=False, result_details=f"FAILURE: {error_msg}")
             self._handle_failure_exception(e)
             return
-            
+
         try:
             command = self._generate_command(library_env_python)
         except Exception as e:
@@ -139,7 +149,7 @@ class TrainLoraNode(SuccessFailureNode):
             self._set_status_results(was_successful=False, result_details=f"FAILURE: {error_msg}")
             self._handle_failure_exception(e)
             return
-            
+
         try:
             subprocess.run(args=command)
 
