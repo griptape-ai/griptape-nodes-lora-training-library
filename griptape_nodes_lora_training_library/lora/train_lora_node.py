@@ -5,6 +5,7 @@ from typing import Any
 
 from griptape_nodes.exe_types.core_types import Parameter
 from griptape_nodes.exe_types.node_types import SuccessFailureNode
+from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from lora.train_lora_parameters import TrainLoraParameters
 
 logger = logging.getLogger("griptape_nodes_lora_training_library")
@@ -89,20 +90,19 @@ class TrainLoraNode(SuccessFailureNode):
         self.ui_options_cache.clear()
 
     def _get_library_env_python(self) -> Path:
-        # Check for Windows path
-        python_exe_windows = Path(__file__).parent.parent / ".venv" / "Scripts" / "python.exe"
-        if python_exe_windows.exists():
-            logger.debug(f"Python executable found at: {python_exe_windows}")
-            return python_exe_windows
+        # Following pattern from Library Manager: https://github.com/griptape-ai/griptape-nodes/blame/a4d959f1f58defcf4e8b2627dab5ae4328983905/src/griptape_nodes/retained_mode/managers/library_manager.py#L1104-L1108
+        venv_path = Path(__file__).parent.parent / ".venv" 
+        if GriptapeNodes.OSManager.is_windows():
+            venv_python_path = venv_path / "Scripts" / "python.exe"
+        else:
+            venv_python_path = venv_path / "bin" / "python"
 
-        # Check for Unix-like (Mac/Linux) path
-        python_exe_unix = Path(__file__).parent.parent / ".venv" / "bin" / "python"
-        if python_exe_unix.exists():
-            logger.debug(f"Python executable found at: {python_exe_unix}")
-            return python_exe_unix
+        if venv_python_path.exists():
+            logger.debug(f"Python executable found at: {venv_python_path}")
+            return venv_python_path
 
         raise FileNotFoundError(
-            f"Python executable not found in expected locations: {python_exe_windows} or {python_exe_unix}"
+            f"Python executable not found in expected location: {venv_python_path}"
         )
 
     def _generate_command(self, library_env_python: Path) -> list[str]:
