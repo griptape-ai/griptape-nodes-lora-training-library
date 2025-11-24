@@ -26,7 +26,7 @@ class TrainLoraNode(SuccessFailureNode):
         )
         self._initializing = False
 
-    def add_parameter(self, parameter: Parameter) -> None:
+    def add_parameter(self, param: Parameter) -> None:
         """Add a parameter to the node.
 
         During initialization, parameters are added normally.
@@ -34,22 +34,22 @@ class TrainLoraNode(SuccessFailureNode):
         for serialization and duplicates are prevented.
         """
         if self._initializing:
-            super().add_parameter(parameter)
+            super().add_parameter(param)
             return
 
         # Dynamic mode: prevent duplicates and mark as user-defined
-        if not self.does_name_exist(parameter.name):
-            parameter.user_defined = True
+        if not self.does_name_exist(param.name):
+            param.user_defined = True
 
             # Restore cached ui_options if available
             ui_options_to_restore = {"hide"}
-            if parameter.name in self.ui_options_cache:
-                parameter.ui_options = {
-                    **parameter.ui_options,
-                    **{k: v for k, v in self.ui_options_cache[parameter.name].items() if k in ui_options_to_restore},
+            if param.name in self.ui_options_cache:
+                param.ui_options = {
+                    **param.ui_options,
+                    **{k: v for k, v in self.ui_options_cache[param.name].items() if k in ui_options_to_restore},
                 }
 
-            super().add_parameter(parameter)
+            super().add_parameter(param)
 
     def set_parameter_value(
         self,
@@ -91,8 +91,8 @@ class TrainLoraNode(SuccessFailureNode):
 
     def _get_library_env_python(self) -> Path:
         # Following pattern from Library Manager: https://github.com/griptape-ai/griptape-nodes/blame/a4d959f1f58defcf4e8b2627dab5ae4328983905/src/griptape_nodes/retained_mode/managers/library_manager.py#L1104-L1108
-        venv_path = Path(__file__).parent.parent / ".venv" 
-        if GriptapeNodes.OSManager.is_windows():
+        venv_path = Path(__file__).parent.parent / ".venv"
+        if GriptapeNodes.OSManager().is_windows():
             venv_python_path = venv_path / "Scripts" / "python.exe"
         else:
             venv_python_path = venv_path / "bin" / "python"
@@ -101,9 +101,7 @@ class TrainLoraNode(SuccessFailureNode):
             logger.debug(f"Python executable found at: {venv_python_path}")
             return venv_python_path
 
-        raise FileNotFoundError(
-            f"Python executable not found in expected location: {venv_python_path}"
-        )
+        raise FileNotFoundError(f"Python executable not found in expected location: {venv_python_path}")
 
     def _generate_command(self, library_env_python: Path) -> list[str]:
         script_name = self.params.model_family_parameters.get_script_name()

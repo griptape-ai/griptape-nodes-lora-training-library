@@ -9,7 +9,7 @@ from griptape.engines import JsonExtractionEngine
 from griptape.loaders import ImageLoader
 from griptape.structures import Agent
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
-from griptape_nodes.exe_types.node_types import SuccessFailureNode
+from griptape_nodes.exe_types.node_types import NodeDependencies, SuccessFailureNode
 from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
@@ -156,6 +156,22 @@ class GenerateDatasetNode(SuccessFailureNode):
                 self.hide_parameter_by_name("agent")
                 self.hide_parameter_by_name("agent_prompt")
                 self.show_parameter_by_name("captions")
+
+    def get_node_dependencies(self) -> NodeDependencies | None:
+        dataset_folder = self.get_parameter_value("dataset_folder")
+        static_files = set()
+
+        if dataset_folder:
+            dataset_path = Path(dataset_folder)
+            if dataset_path.exists() and dataset_path.is_dir():
+                # Recursively iterate over all files in the dataset folder
+                for file_path in dataset_path.rglob("*"):
+                    if file_path.is_file():
+                        static_files.add(str(file_path))
+
+        return NodeDependencies(
+            static_files=static_files,
+        )
 
     def _generate_caption_for_image(
         self, image_artifact: ImageArtifact, agent: Agent, extraction_engine: JsonExtractionEngine
@@ -342,4 +358,5 @@ keep_tokens = 0
             return
 
         self.set_parameter_value("dataset_config_path", str(dataset_toml_path))
+        self.publish_update_to_parameter("dataset_config_path", str(dataset_toml_path))
         self._set_status_results(was_successful=True, result_details="Success")
