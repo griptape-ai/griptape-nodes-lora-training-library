@@ -107,7 +107,7 @@ class TrainLoraNode(SuccessFailureNode):
 
     def _generate_command(self, library_env_python: Path) -> list[str]:
         script_name = self.params.model_family_parameters.get_script_name()
-        sd_scripts_dir = Path(__file__).parent.parent.parent / "sd-scripts"
+        sd_scripts_dir = Path(__file__).parent.parent / "sd-scripts"
         script_path = sd_scripts_dir / script_name
         if not script_path.exists():
             raise FileNotFoundError(f"Script not found: {script_path}")
