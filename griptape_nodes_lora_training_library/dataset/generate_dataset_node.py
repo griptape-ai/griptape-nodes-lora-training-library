@@ -21,6 +21,7 @@ logger = logging.getLogger("griptape_nodes_lora_training_library")
 
 API_KEY_ENV_VAR = "GT_CLOUD_API_KEY"
 RESOLUTION_OPTIONS = [512, 1024]
+DEFAULT_DATASET_CONFIG_PATH = "<dataset_config_path>"
 
 
 class GenerateDatasetNode(SuccessFailureNode):
@@ -136,7 +137,7 @@ class GenerateDatasetNode(SuccessFailureNode):
                 name="dataset_config_path",
                 allowed_modes={ParameterMode.OUTPUT},
                 output_type="str",
-                default_value="<dataset_config_path>",
+                default_value=DEFAULT_DATASET_CONFIG_PATH,
                 tooltip="The full path to the dataset configuration file.",
             )
         )
@@ -156,6 +157,11 @@ class GenerateDatasetNode(SuccessFailureNode):
                 self.hide_parameter_by_name("agent")
                 self.hide_parameter_by_name("agent_prompt")
                 self.show_parameter_by_name("captions")
+        if parameter.name == "dataset_folder":
+            if value:
+                dataset_config_path = str(Path(value) / "dataset.toml")
+                self.set_parameter_value("dataset_config_path", dataset_config_path)
+                self.publish_update_to_parameter("dataset_config_path", dataset_config_path)
 
     def get_node_dependencies(self) -> NodeDependencies | None:
         dataset_folder = self.get_parameter_value("dataset_folder")
