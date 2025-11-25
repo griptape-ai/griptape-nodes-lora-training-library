@@ -9,7 +9,7 @@ from griptape.engines import JsonExtractionEngine
 from griptape.loaders import ImageLoader
 from griptape.structures import Agent
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
-from griptape_nodes.exe_types.node_types import NodeDependencies, SuccessFailureNode
+from griptape_nodes.exe_types.node_types import AsyncResult, NodeDependencies, SuccessFailureNode
 from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
@@ -303,7 +303,7 @@ keep_tokens = 0
         toml_path.write_text(toml)
         return toml_path
 
-    def process(self) -> None:
+    def _process(self) -> None:
         self._clear_execution_status()
         dataset_folder = self.get_parameter_value("dataset_folder")
         image_resolution = self.get_parameter_value("image_resolution")
@@ -366,3 +366,8 @@ keep_tokens = 0
         self.set_parameter_value("dataset_config_path", str(dataset_toml_path))
         self.publish_update_to_parameter("dataset_config_path", str(dataset_toml_path))
         self._set_status_results(was_successful=True, result_details="Success")
+
+    def process(
+        self,
+    ) -> AsyncResult[None]:
+        yield lambda: self._process()
