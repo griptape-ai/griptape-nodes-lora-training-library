@@ -9,8 +9,8 @@
     "tags": ["Griptape", "AI"],
     "dependencies": {
       "pip_dependencies": [
-        "torch==2.9.0",
-        "torchvision==0.24.0",
+        "torch==2.8.0",
+        "torchvision==0.23.0",
         "accelerate==1.6.0",
         "transformers==4.54.1",
         "diffusers[torch]==0.32.1",
@@ -36,7 +36,7 @@
       ],
       "pip_install_flags": [
         "--extra-index-url",
-        "https://download.pytorch.org/whl/cu129"
+        "https://download.pytorch.org/whl/cu128"
       ]
     }
   },
