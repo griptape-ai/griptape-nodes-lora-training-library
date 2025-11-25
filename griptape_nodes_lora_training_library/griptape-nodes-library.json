@@ -68,6 +68,15 @@
         "description": "Griptape Node that generates a dataset for LoRA training.",
         "display_name": "Generate LoRA Dataset"
       }
+    },
+    {
+      "class_name": "DownloadDatasetNode",
+      "file_path": "dataset/download_dataset_node.py",
+      "metadata": {
+        "category": "lora",
+        "description": "Griptape Node that downloads and extracts a dataset zip from a URL.",
+        "display_name": "Download Dataset"
+      }
     }
   ]
 }

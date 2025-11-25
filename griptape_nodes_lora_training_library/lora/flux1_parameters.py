@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.exe_types.param_components.huggingface.huggingface_repo_parameter import HuggingFaceRepoParameter
 from griptape_nodes.exe_types.param_components.seed_parameter import SeedParameter
-from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
-
 from lora.model_family_parameters import TrainLoraModelFamilyParameters
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from lora.train_lora_node import TrainLoraNode
 
 logger = logging.getLogger("diffusers_nodes_library")
@@ -37,15 +37,15 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             default_value="",
             tooltip="The full path to the dataset configuration file.",
             traits={
-                    FileSystemPicker(
-                        allow_files=True,
-                        allow_directories=False,
-                        multiple=False,
-                        file_types=[
-                            ".toml",
-                        ],
-                    )   
-                },
+                FileSystemPicker(
+                    allow_files=True,
+                    allow_directories=False,
+                    multiple=False,
+                    file_types=[
+                        ".toml",
+                    ],
+                )
+            },
         )
         self._output_dir = Parameter(
             name="output_dir",
@@ -54,12 +54,12 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             default_value="",
             tooltip="The full path to the output directory.",
             traits={
-                    FileSystemPicker(
-                        allow_files=False,
-                        allow_directories=True,
-                        multiple=False,
-                    )   
-                },
+                FileSystemPicker(
+                    allow_files=False,
+                    allow_directories=True,
+                    multiple=False,
+                )
+            },
         )
         self._output_name = Parameter(
             name="output_name",
@@ -100,7 +100,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             name="network_alpha",
             allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
             type="float",
-            default_value=1,
+            default_value=1.0,
             tooltip="The alpha parameter for the network.",
         )
         self._full_bf16 = Parameter(
@@ -118,7 +118,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             tooltip="Mixed precision training mode",
             traits={
                 Options(choices=["bf16", "fp16", "no"]),
-            }
+            },
         )
         self._save_precision = Parameter(
             name="save_precision",
@@ -128,7 +128,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
             tooltip="Precision for saving models",
             traits={
                 Options(choices=["bf16", "fp16", "no"]),
-            }
+            },
         )
         self._guidance_scale = Parameter(
             name="guidance_scale",
@@ -160,7 +160,6 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         )
 
         self._seed_parameter = SeedParameter(node)
-        
 
     def add_input_parameters(self) -> None:
         self._model_repo_parameter.add_input_parameters()
@@ -244,40 +243,70 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         return t5xxl_path
 
     def get_script_params(self) -> list[str]:
+        def format_float(value: float) -> str:
+            """Format a float to always include at least one decimal place."""
+            formatted = str(float(value))
+            if "." not in formatted and "e" not in formatted.lower():
+                formatted += ".0"
+            return formatted
+
         hardcoded_params = [
             "--cache_latents_to_disk",
             "--sdpa",
             "--persistent_data_loader_workers",
             "--gradient_checkpointing",
             "--cache_text_encoder_outputs",
-            "--discrete_flow_shift", "3.1582",
-            "--timestep_sampling", "shift",
-            "--network_module", "networks.lora_flux",
-            "--save_model_as", "safetensors",
-            "--loss_type", "l2",
-            '--model_prediction_type', 'raw',
+            "--discrete_flow_shift",
+            "3.1582",
+            "--timestep_sampling",
+            "shift",
+            "--network_module",
+            "networks.lora_flux",
+            "--save_model_as",
+            "safetensors",
+            "--loss_type",
+            "l2",
+            "--model_prediction_type",
+            "raw",
         ]
 
         key_value_params = [
             # Model file paths resolved from HuggingFace cache
-            "--pretrained_model_name_or_path", str(self._get_flux_model_path()),
-            "--clip_l", str(self._get_clip_l_model_path()),
-            "--t5xxl", str(self._get_t5xxl_model_path()),
-            "--ae", str(self._get_ae_model_path()),
+            "--pretrained_model_name_or_path",
+            str(self._get_flux_model_path()),
+            "--clip_l",
+            str(self._get_clip_l_model_path()),
+            "--t5xxl",
+            str(self._get_t5xxl_model_path()),
+            "--ae",
+            str(self._get_ae_model_path()),
             # Training configuration
-            "--dataset_config", self._node.get_parameter_value("dataset_config_path"),
-            "--output_dir", self._node.get_parameter_value("output_dir"),
-            "--output_name", self._node.get_parameter_value("output_name"),
-            "--learning_rate", str(self._node.get_parameter_value("learning_rate")),
-            "--save_every_n_epochs", str(int(self._node.get_parameter_value("save_every_n_epochs"))),
-            "--max_train_epochs", str(int(self._node.get_parameter_value("max_train_epochs"))),
-            "--network_dim", str(int(self._node.get_parameter_value("network_dim"))),
-            "--network_alpha", str(self._node.get_parameter_value("network_alpha")),
-            "--mixed_precision", self._node.get_parameter_value("mixed_precision"),
-            "--save_precision", self._node.get_parameter_value("save_precision"),
-            "--guidance_scale", str(self._node.get_parameter_value("guidance_scale")),
-            "--max_data_loader_n_workers", str(int(self._node.get_parameter_value("max_data_loader_n_workers"))),
-            "--seed", str(int(self._seed_parameter.get_seed())),
+            "--dataset_config",
+            self._node.get_parameter_value("dataset_config_path"),
+            "--output_dir",
+            self._node.get_parameter_value("output_dir"),
+            "--output_name",
+            self._node.get_parameter_value("output_name"),
+            "--learning_rate",
+            format_float(self._node.get_parameter_value("learning_rate")),
+            "--save_every_n_epochs",
+            str(int(self._node.get_parameter_value("save_every_n_epochs"))),
+            "--max_train_epochs",
+            str(int(self._node.get_parameter_value("max_train_epochs"))),
+            "--network_dim",
+            str(int(self._node.get_parameter_value("network_dim"))),
+            "--network_alpha",
+            format_float(self._node.get_parameter_value("network_alpha")),
+            "--mixed_precision",
+            self._node.get_parameter_value("mixed_precision"),
+            "--save_precision",
+            self._node.get_parameter_value("save_precision"),
+            "--guidance_scale",
+            format_float(self._node.get_parameter_value("guidance_scale")),
+            "--max_data_loader_n_workers",
+            str(int(self._node.get_parameter_value("max_data_loader_n_workers"))),
+            "--seed",
+            str(int(self._seed_parameter.get_seed())),
         ]
         params = hardcoded_params + key_value_params
         if self._node.get_parameter_value("full_bf16"):
@@ -287,9 +316,9 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         if self._node.get_parameter_value("highvram"):
             params.append("--highvram")
         return params
-    
+
     def get_mixed_precision(self) -> str:
         return self._node.get_parameter_value("mixed_precision")
-    
+
     def get_script_name(self) -> str:
         return "flux_train_network.py"
