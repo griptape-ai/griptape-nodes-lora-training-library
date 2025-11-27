@@ -38,6 +38,7 @@ Train custom LoRA (Low-Rank Adaptation) models for FLUX.1 diffusion models withi
    * Open the Settings menu and navigate to the *Libraries* settings
    * Click on *+ Add Library* at the bottom of the settings panel
    * Enter the path to the library JSON file: **your Griptape Nodes Workspace directory**`/griptape-nodes-lora-training-library/griptape_nodes_lora_training_library/griptape-nodes-library.json`
+     * Note: Select the `library.json` file based on your dependency preferences. For instance, `griptape-nodes-library-cuda129.json` defines dependencies for Cuda 12.9.
    * You can check your workspace directory with `gtn config show workspace_directory`
    * Close the Settings Panel
    * Click on *Refresh Libraries*
