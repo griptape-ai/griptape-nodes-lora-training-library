@@ -49,7 +49,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         )
         self._output_dir = Parameter(
             name="output_dir",
-            allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
+            allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY, ParameterMode.OUTPUT},
             type="str",
             default_value="",
             tooltip="The full path to the output directory.",
@@ -63,7 +63,7 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
         )
         self._output_name = Parameter(
             name="output_name",
-            allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY},
+            allowed_modes={ParameterMode.INPUT, ParameterMode.PROPERTY, ParameterMode.OUTPUT},
             type="str",
             default_value="my_flux_lora",
             tooltip="The name of the output LoRA.",
