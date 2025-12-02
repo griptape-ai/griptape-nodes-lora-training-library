@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import re
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
@@ -11,8 +13,6 @@ from griptape_nodes.traits.options import Options
 from lora.model_family_parameters import TrainLoraModelFamilyParameters
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from lora.train_lora_node import TrainLoraNode
 
 logger = logging.getLogger("diffusers_nodes_library")
@@ -202,8 +202,34 @@ class FLUX1Parameters(TrainLoraModelFamilyParameters):
     def after_value_set(self, parameter: Parameter, value: Any) -> None:
         self._seed_parameter.after_value_set(parameter, value)
 
+    def _sanitize_toml_booleans(self, toml_path: Path) -> None:
+        """Sanitize a TOML file by converting Python-style booleans to TOML-style.
+
+        TOML requires lowercase 'true' and 'false', but some tools generate
+        Python-style 'True' and 'False'. This method fixes those issues.
+        """
+        if not toml_path.exists():
+            return
+
+        content = toml_path.read_text()
+        original_content = content
+
+        # Replace Python-style booleans with TOML-style
+        # Match '= True' or '= False' (with optional whitespace)
+        content = re.sub(r"=\s*True\b", "= true", content)
+        content = re.sub(r"=\s*False\b", "= false", content)
+
+        if content != original_content:
+            toml_path.write_text(content)
+            logger.info(f"Sanitized TOML booleans in {toml_path}")
+
     def preprocess(self) -> None:
         self._seed_parameter.preprocess()
+
+        # Sanitize the dataset config TOML file to fix any Python-style booleans
+        dataset_config_path = self._node.get_parameter_value("dataset_config_path")
+        if dataset_config_path:
+            self._sanitize_toml_booleans(Path(dataset_config_path))
 
     def _get_flux_model_path(self) -> Path:
         flux_patterns = [
