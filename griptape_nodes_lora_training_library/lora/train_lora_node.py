@@ -1,5 +1,5 @@
+import asyncio
 import logging
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -128,7 +128,10 @@ class TrainLoraNode(SuccessFailureNode):
         self._clear_execution_status()
         self.params.preprocess()
 
-    def process(self) -> None:
+    async def aprocess(self) -> None:
+        await self._process()
+
+    async def _process(self) -> None:
         self.preprocess()
         logger.warning("Starting LoRA training process...")
 
@@ -149,7 +152,12 @@ class TrainLoraNode(SuccessFailureNode):
             return
 
         try:
-            subprocess.run(args=command)
+            process = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            await process.communicate()
 
             # Set the lora_path output parameter
             output_dir = self.get_parameter_value("output_dir")
@@ -157,7 +165,7 @@ class TrainLoraNode(SuccessFailureNode):
             lora_path = Path(output_dir) / f"{output_name}.safetensors"
             self.set_parameter_value("lora_path", str(lora_path))
 
-            success_msg = f"LoRA training executed successfully."
+            success_msg = "LoRA training executed successfully."
             self._set_status_results(was_successful=True, result_details=f"SUCCESS: {success_msg}")
         except Exception as e:
             error_msg = f"Failed to execute lora training: {e}"
