@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -9,7 +11,7 @@ from griptape.engines import JsonExtractionEngine
 from griptape.loaders import ImageLoader
 from griptape.structures import Agent
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
-from griptape_nodes.exe_types.node_types import AsyncResult, NodeDependencies, SuccessFailureNode
+from griptape_nodes.exe_types.node_types import NodeDependencies, SuccessFailureNode
 from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
@@ -194,7 +196,7 @@ class GenerateDatasetNode(SuccessFailureNode):
         logger.debug(f"Generated {len(tags)} tags for {image_artifact}: {caption_text}")
         return caption_text
 
-    def create_dataset(self, dataset_folder: Path, images: list[ImageArtifact | ImageUrlArtifact] | None):
+    async def create_dataset(self, dataset_folder: Path, images: list[ImageArtifact | ImageUrlArtifact] | None):
         dataset_folder.mkdir(parents=True, exist_ok=True)
 
         images_folder = dataset_folder / "images"
@@ -223,7 +225,11 @@ class GenerateDatasetNode(SuccessFailureNode):
                 image_artifact.name = image_file.name
                 images.append(image_artifact)
 
-        if self.get_parameter_value("generate_captions"):
+        generate_captions = self.get_parameter_value("generate_captions")
+        agent = None
+        extraction_engine = None
+
+        if generate_captions:
             agent = self.get_parameter_value("agent")
             if not agent:
                 prompt_driver = GriptapeCloudPromptDriver(
@@ -239,6 +245,8 @@ class GenerateDatasetNode(SuccessFailureNode):
                 prompt_driver=agent.prompt_driver, template_schema=tag_schema.json_schema("TagSchema")
             )
 
+        # First pass: prepare all images and save to disk
+        prepared_images: list[tuple[ImageArtifact, str]] = []
         for i, image_artifact in enumerate(images):
             # Convert ImageUrlArtifact to ImageArtifact if needed
             if isinstance(image_artifact, ImageUrlArtifact):
@@ -256,8 +264,6 @@ class GenerateDatasetNode(SuccessFailureNode):
             source_path = dataset_folder / image_filename
             if source_path.exists() and source_path != image_path:
                 # Copy existing image from dataset_folder to images_folder
-                import shutil
-
                 shutil.copy2(str(source_path), str(image_path))
                 logger.debug(f"Copied existing image to {image_path}")
             elif not image_path.exists():
@@ -266,13 +272,23 @@ class GenerateDatasetNode(SuccessFailureNode):
                     f.write(image_artifact.to_bytes())
                 logger.debug(f"Saved image to {image_path}")
 
-            if self.get_parameter_value("generate_captions"):
-                caption_text = self._generate_caption_for_image(image_artifact, agent, extraction_engine)
-            else:
-                caption_text = self.get_parameter_value("captions")[i]
+            prepared_images.append((image_artifact, image_filename))
 
+        # Second pass: generate captions in parallel
+        if generate_captions:
+            # Generate all captions in parallel using threads
+            caption_tasks = [
+                asyncio.to_thread(self._generate_caption_for_image, img, agent, extraction_engine)
+                for img, _ in prepared_images
+            ]
+            captions = await asyncio.gather(*caption_tasks)
+        else:
+            captions = self.get_parameter_value("captions")
+
+        # Third pass: write caption files
+        trigger_phrase = self.get_parameter_value("trigger_phrase")
+        for (_, image_filename), caption_text in zip(prepared_images, captions):
             # Prepend trigger phrase if provided
-            trigger_phrase = self.get_parameter_value("trigger_phrase")
             if trigger_phrase and trigger_phrase.strip():
                 caption_text = f"{trigger_phrase.strip()}, {caption_text}"
 
@@ -303,7 +319,10 @@ keep_tokens = 0
         toml_path.write_text(toml)
         return toml_path
 
-    def _process(self) -> None:
+    async def aprocess(self) -> None:
+        await self._process()
+
+    async def _process(self) -> None:
         self._clear_execution_status()
         dataset_folder = self.get_parameter_value("dataset_folder")
         image_resolution = self.get_parameter_value("image_resolution")
@@ -344,7 +363,7 @@ keep_tokens = 0
         logger.debug(f"Processing {len(images)} images")
 
         try:
-            self.create_dataset(dataset_folder_path, images)
+            await self.create_dataset(dataset_folder_path, images)
             logger.debug(f"Dataset created at: {dataset_folder_path}")
         except Exception as e:
             logger.exception(f"Error while creating dataset: {str(e)}")
@@ -366,8 +385,3 @@ keep_tokens = 0
         self.set_parameter_value("dataset_config_path", str(dataset_toml_path))
         self.publish_update_to_parameter("dataset_config_path", str(dataset_toml_path))
         self._set_status_results(was_successful=True, result_details="Success")
-
-    def process(
-        self,
-    ) -> AsyncResult[None]:
-        yield lambda: self._process()
