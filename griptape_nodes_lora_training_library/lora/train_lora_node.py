@@ -133,7 +133,7 @@ class TrainLoraNode(SuccessFailureNode):
 
     async def _process(self) -> None:
         self.preprocess()
-        logger.warning("Starting LoRA training process...")
+        logger.info("Starting LoRA training process...")
 
         try:
             library_env_python = self._get_library_env_python()
@@ -152,12 +152,8 @@ class TrainLoraNode(SuccessFailureNode):
             return
 
         try:
-            process = await asyncio.create_subprocess_exec(
-                *command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-            )
-            await process.communicate()
+            process = await asyncio.create_subprocess_exec(*command)
+            await process.wait()
 
             # Set the lora_path output parameter
             output_dir = self.get_parameter_value("output_dir")
