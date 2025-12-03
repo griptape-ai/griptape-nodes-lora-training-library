@@ -3,9 +3,9 @@ import zipfile
 from pathlib import Path
 from urllib.parse import urlparse
 
-import requests
+import httpx
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
-from griptape_nodes.exe_types.node_types import AsyncResult, SuccessFailureNode
+from griptape_nodes.exe_types.node_types import SuccessFailureNode
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 
 logger = logging.getLogger("griptape_nodes_lora_training_library")
@@ -56,7 +56,10 @@ class DownloadDatasetNode(SuccessFailureNode):
             result_details_placeholder="Download result details will appear here.",
         )
 
-    def _process(self) -> None:
+    async def aprocess(self) -> None:
+        await self._process()
+
+    async def _process(self) -> None:
         self._clear_execution_status()
         url = self.get_parameter_value("url")
         extract_location = self.get_parameter_value("extract_location")
@@ -80,21 +83,21 @@ class DownloadDatasetNode(SuccessFailureNode):
             # Download the zip file
             msg = f"Downloading zip file from: {url}"
             self.status_component.append_to_result_details(msg)
-            response = requests.get(url, stream=True, timeout=300)
-            response.raise_for_status()
+            async with httpx.AsyncClient(timeout=300) as client:
+                response = await client.get(url)
+                response.raise_for_status()
 
-            # Get filename from URL or use default
-            parsed_url = urlparse(url)
-            filename = Path(parsed_url.path).name or "dataset.zip"
-            if not filename.endswith(".zip"):
-                filename += ".zip"
+                # Get filename from URL or use default
+                parsed_url = urlparse(url)
+                filename = Path(parsed_url.path).name or "dataset.zip"
+                if not filename.endswith(".zip"):
+                    filename += ".zip"
 
-            zip_path = extract_path / filename
+                zip_path = extract_path / filename
 
-            # Save the downloaded file
-            with zip_path.open("wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
+                # Save the downloaded file
+                with zip_path.open("wb") as f:
+                    f.write(response.content)
 
             msg = f"Downloaded zip file to: {zip_path}"
             self.status_component.append_to_result_details(msg)
@@ -131,7 +134,7 @@ class DownloadDatasetNode(SuccessFailureNode):
                 result_details=f"Successfully downloaded and extracted dataset to {final_extract_path}",
             )
 
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPStatusError as e:
             msg = f"Error while downloading file: {e!s}"
             logger.exception(msg)
             self._set_status_results(was_successful=False, result_details=msg)
@@ -146,8 +149,3 @@ class DownloadDatasetNode(SuccessFailureNode):
             logger.exception(msg)
             self._set_status_results(was_successful=False, result_details=msg)
             return
-
-    def process(
-        self,
-    ) -> AsyncResult[None]:
-        yield lambda: self._process()
