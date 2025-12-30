@@ -1,10 +1,10 @@
 {
   "name": "Griptape Nodes Lora Training Library",
-  "library_schema_version": "0.3.0",
+  "library_schema_version": "0.4.0",
   "metadata": {
     "author": "Griptape, Inc.",
     "description": "LoRA training for Griptape Nodes.",
-    "library_version": "0.61.1",
+    "library_version": "0.62.0",
     "engine_version": "0.60.0",
     "tags": ["Griptape", "AI"],
     "dependencies": {
@@ -38,6 +38,11 @@
         "--extra-index-url",
         "https://download.pytorch.org/whl/cu128"
       ]
+    },
+    "resources": {
+      "required": {
+        "compute": [["cuda"], "has_any"]
+      }
     }
   },
   "categories": [
