@@ -12,6 +12,7 @@ from griptape.loaders import ImageLoader
 from griptape.structures import Agent
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.exe_types.node_types import NodeDependencies, SuccessFailureNode
+from griptape_nodes.files.file import File, FileLoadError
 from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
@@ -214,8 +215,7 @@ class GenerateDatasetNode(SuccessFailureNode):
             images = []
             image_loader = ImageLoader()
             for image_file in existing_image_files:
-                with open(image_file, "rb") as f:
-                    image_data = f.read()
+                image_data = File(str(image_file)).read_bytes()
 
                 # Parse image using Griptape's ImageLoader
                 image_artifact = image_loader.parse(image_data)
