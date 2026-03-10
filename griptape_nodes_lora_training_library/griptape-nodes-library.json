@@ -6,7 +6,7 @@
     "author": "Griptape, Inc.",
     "description": "LoRA training for Griptape Nodes.",
     "library_version": "0.62.0",
-    "engine_version": "0.60.0",
+    "engine_version": "0.75.0",
     "tags": ["Griptape", "AI"],
     "dependencies": {
       "pip_dependencies": [
