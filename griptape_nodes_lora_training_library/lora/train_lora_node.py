@@ -90,36 +90,63 @@ class TrainLoraNode(SuccessFailureNode):
         self.ui_options_cache.clear()
 
     def _get_library_env_python(self) -> Path:
-        # Following pattern from Library Manager: https://github.com/griptape-ai/griptape-nodes/blame/a4d959f1f58defcf4e8b2627dab5ae4328983905/src/griptape_nodes/retained_mode/managers/library_manager.py#L1104-L1108
+        import subprocess
+
         venv_path = Path(__file__).parent.parent / ".venv"
         if GriptapeNodes.OSManager().is_windows():
             venv_python_path = venv_path / "Scripts" / "python.exe"
         else:
             venv_python_path = venv_path / "bin" / "python"
 
-        if venv_python_path.exists():
-            logger.debug(f"Python executable found at: {venv_python_path}")
-            return venv_python_path
+        if not venv_python_path.exists():
+            msg = f"Library venv not found at {venv_path}. Please reinstall the LoRA training library."
+            raise FileNotFoundError(msg)
 
-        raise FileNotFoundError(f"Python executable not found in expected location: {venv_python_path}")
+        result = subprocess.run(
+            [str(venv_python_path), "-c", "import accelerate"],
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            msg = f"Library venv at {venv_path} is missing required dependencies. Please reinstall the LoRA training library."
+            raise RuntimeError(msg)
+
+        return venv_python_path
+
+    def _resolve_script_path(self, script_name: str) -> Path:
+        """Resolve training script path, checking library root then sd-scripts."""
+        library_root = Path(__file__).parent.parent
+        # Check library root first (for diffusers-based scripts like FLUX.2 Klein)
+        script_path = library_root / script_name
+        if script_path.exists():
+            return script_path
+        # Fall back to sd-scripts directory (for kohya sd-scripts)
+        script_path = library_root / "sd-scripts" / script_name
+        if script_path.exists():
+            return script_path
+        raise FileNotFoundError(
+            f"Script '{script_name}' not found in {library_root} or {library_root / 'sd-scripts'}"
+        )
 
     def _generate_command(self, library_env_python: Path) -> list[str]:
         script_name = self.params.model_family_parameters.get_script_name()
-        sd_scripts_dir = Path(__file__).parent.parent / "sd-scripts"
-        script_path = sd_scripts_dir / script_name
-        if not script_path.exists():
-            raise FileNotFoundError(f"Script not found: {script_path}")
-        command = [
-            str(library_env_python),
-            "-u",
-            "-m",
-            "accelerate.commands.launch",
-            "--num_cpu_threads_per_process",
-            "1",
-            "--mixed_precision",
-            self.params.model_family_parameters.get_mixed_precision(),
-            str(script_path),
-        ]
+        script_path = self._resolve_script_path(script_name)
+
+        # FLUX.2 Klein uses a standalone diffusers script (no accelerate needed)
+        if script_path.parent == Path(__file__).parent.parent:
+            command = [str(library_env_python), "-u", str(script_path)]
+        else:
+            command = [
+                str(library_env_python),
+                "-u",
+                "-m",
+                "accelerate.commands.launch",
+                "--num_cpu_threads_per_process",
+                "1",
+                "--mixed_precision",
+                self.params.model_family_parameters.get_mixed_precision(),
+                str(script_path),
+            ]
+
         command.extend(self.params.model_family_parameters.get_script_params())
         logger.debug(f"Generated command: {command}")
         return command
@@ -154,6 +181,12 @@ class TrainLoraNode(SuccessFailureNode):
         try:
             process = await asyncio.create_subprocess_exec(*command)
             await process.wait()
+
+            if process.returncode != 0:
+                error_msg = f"Training script exited with code {process.returncode}"
+                self._set_status_results(was_successful=False, result_details=f"FAILURE: {error_msg}")
+                self._handle_failure_exception(RuntimeError(error_msg))
+                return
 
             # Set the lora_path output parameter
             output_dir = self.get_parameter_value("output_dir")

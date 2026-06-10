@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.traits.options import Options
 from lora.flux1_parameters import FLUX1Parameters
+from lora.flux2_klein_parameters import FLUX2KleinParameters
 
 if TYPE_CHECKING:
     from lora.model_family_parameters import TrainLoraModelFamilyParameters
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("griptape_nodes_lora_training_library")
 
 
-MODEL_FAMILIES = ["FLUX.1"]
+MODEL_FAMILIES = ["FLUX.1", "FLUX.2 Klein"]
 
 
 class TrainLoraParameters(ABC):
@@ -45,6 +46,8 @@ class TrainLoraParameters(ABC):
         match model_family:
             case "FLUX.1":
                 self._model_family_parameters = FLUX1Parameters(self._node)
+            case "FLUX.2 Klein":
+                self._model_family_parameters = FLUX2KleinParameters(self._node)
             case _:
                 msg = f"Unsupported model family: {model_family}"
                 logger.error(msg)
@@ -71,10 +74,21 @@ class TrainLoraParameters(ABC):
 
         # Get all current element names
         all_element_names = [element.name for element in self._node.root_ui_element.children]
+        existing_set = set(all_element_names)
 
-        # Build parameter groupings
-        start_params = TrainLoraParameters.START_PARAMS
-        end_params = TrainLoraParameters.END_PARAMS
+        # Build parameter groupings, filtering to only elements that exist
+        start_params = []
+        for p in TrainLoraParameters.START_PARAMS:
+            if p in existing_set:
+                start_params.append(p)
+            else:
+                logger.debug(f"START_PARAMS element '{p}' not found on node, skipping")
+        end_params = []
+        for p in TrainLoraParameters.END_PARAMS:
+            if p in existing_set:
+                end_params.append(p)
+            else:
+                logger.debug(f"END_PARAMS element '{p}' not found on node, skipping")
         excluded_params = {*start_params, *end_params}
 
         # Assemble final order: start -> middle -> end
