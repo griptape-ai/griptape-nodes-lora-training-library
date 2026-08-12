@@ -34,8 +34,7 @@
         "numpy",
         "rich==14.1.0",
         "sentencepiece==0.2.1",
-        "xformers",
-        "pygit2"
+        "xformers"
       ],
       "pip_install_flags": [
         "--extra-index-url",

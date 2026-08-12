@@ -1,7 +1,6 @@
 import logging
+import subprocess
 from pathlib import Path
-
-import pygit2
 
 from griptape_nodes.node_library.advanced_node_library import AdvancedNodeLibrary
 from griptape_nodes.node_library.library_registry import Library, LibrarySchema
@@ -30,20 +29,6 @@ class LoraTrainingLibraryAdvanced(AdvancedNodeLibrary):
         """Get the library root directory (where .venv lives)."""
         return Path(__file__).parent
 
-    def _update_submodules_recursive(self, repo_path: Path) -> None:
-        """Recursively update and initialize all submodules.
-
-        Equivalent to: git submodule update --init --recursive
-        """
-        repo = pygit2.Repository(str(repo_path))
-        repo.submodules.update(init=True)
-
-        # Recursively update nested submodules
-        for submodule in repo.submodules:
-            submodule_path = repo_path / submodule.path
-            if submodule_path.exists() and (submodule_path / ".git").exists():
-                self._update_submodules_recursive(submodule_path)
-
     def _init_sd_scripts_submodule(self) -> Path:
         """Initialize the sd-scripts git submodule."""
         library_root = self._get_library_root()
@@ -53,8 +38,11 @@ class LoraTrainingLibraryAdvanced(AdvancedNodeLibrary):
             logger.info("sd-scripts submodule already initialized")
             return sd_scripts_submodule_dir
 
+        # The git CLI rather than pygit2: the engine dropped pygit2 (its bundled TLS trust
+        # store breaks on some platforms) and requires git on PATH, so it is the one tool
+        # guaranteed to be here.
         git_repo_root = library_root.parent
-        self._update_submodules_recursive(git_repo_root)
+        subprocess.check_call(["git", "-C", str(git_repo_root), "submodule", "update", "--init", "--recursive"])
 
         if not sd_scripts_submodule_dir.exists() or not any(sd_scripts_submodule_dir.iterdir()):
             raise RuntimeError(
