@@ -5,7 +5,7 @@
   "metadata": {
     "author": "Griptape, Inc.",
     "description": "LoRA training for Griptape Nodes.",
-    "library_version": "0.62.0",
+    "library_version": "0.63.0",
     "engine_version": "0.75.0",
     "tags": ["Griptape", "AI"],
     "dependencies": {
@@ -34,8 +34,7 @@
         "numpy",
         "rich==14.1.0",
         "sentencepiece==0.2.1",
-        "xformers",
-        "pygit2"
+        "xformers"
       ],
       "pip_install_flags": [
         "--extra-index-url",
