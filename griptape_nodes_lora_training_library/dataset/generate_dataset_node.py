@@ -16,7 +16,7 @@ from griptape_nodes.files.file import File, FileLoadError
 from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
-from image_utils import load_image_from_url_artifact
+from image_utils import load_image_from_path, load_image_from_url_artifact
 from schema import Literal, Schema
 
 logger = logging.getLogger("griptape_nodes_lora_training_library")
@@ -36,7 +36,7 @@ class GenerateDatasetNode(SuccessFailureNode):
                 input_types=["list"],
                 default_value=[],
                 allowed_modes={ParameterMode.INPUT},
-                tooltip="Images to include in the dataset.",
+                tooltip="Images to include in the dataset. Accepts image artifacts or image file paths.",
             )
         )
 
@@ -194,7 +194,30 @@ class GenerateDatasetNode(SuccessFailureNode):
         logger.debug(f"Generated {len(tags)} tags for {image_artifact}: {caption_text}")
         return caption_text
 
-    async def create_dataset(self, dataset_folder: Path, images: list[ImageArtifact | ImageUrlArtifact] | None):
+    def _to_image_artifact(self, image: Any, index: int) -> ImageArtifact:
+        """Normalize a single `images` input entry into an ImageArtifact.
+
+        Accepts ImageArtifact, ImageUrlArtifact, and path-like inputs (`str`/`Path`),
+        since nodes that enumerate files on disk emit lists of path strings. Anything
+        else is rejected here with a message naming the offending type, rather than
+        failing later inside filename construction or `to_bytes()`.
+        """
+        if isinstance(image, ImageArtifact):
+            return image
+        if isinstance(image, ImageUrlArtifact):
+            return load_image_from_url_artifact(image)
+        if isinstance(image, (str, Path)):
+            return load_image_from_path(image)
+
+        msg = (
+            f"Unsupported type for image at index {index}: {type(image).__name__}. "
+            f"The images input accepts image artifacts or file paths."
+        )
+        raise TypeError(msg)
+
+    async def create_dataset(
+        self, dataset_folder: Path, images: list[ImageArtifact | ImageUrlArtifact | str | Path] | None
+    ):
         dataset_folder.mkdir(parents=True, exist_ok=True)
 
         images_folder = dataset_folder / "images"
@@ -244,13 +267,12 @@ class GenerateDatasetNode(SuccessFailureNode):
 
         # First pass: prepare all images and save to disk
         prepared_images: list[tuple[ImageArtifact, str]] = []
-        for i, image_artifact in enumerate(images):
-            # Convert ImageUrlArtifact to ImageArtifact if needed
-            if isinstance(image_artifact, ImageUrlArtifact):
-                image_artifact = load_image_from_url_artifact(image_artifact)
+        for i, image in enumerate(images):
+            # Normalize artifacts and path-like inputs to an ImageArtifact
+            image_artifact = self._to_image_artifact(image, i)
 
             # Use existing filename if available, otherwise generate one
-            if hasattr(image_artifact, "name") and image_artifact.name:
+            if image_artifact.name:
                 image_filename = image_artifact.name
             else:
                 image_filename = f"image_{i:04d}.{image_artifact.format}"
