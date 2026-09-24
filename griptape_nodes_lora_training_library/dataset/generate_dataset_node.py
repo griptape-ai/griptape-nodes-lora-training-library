@@ -13,6 +13,7 @@ from griptape.structures import Agent
 from griptape_nodes.exe_types.core_types import Parameter, ParameterMode
 from griptape_nodes.exe_types.node_types import NodeDependencies, SuccessFailureNode
 from griptape_nodes.files.file import File, FileLoadError
+from griptape_nodes.retained_mode.events.secrets_events import GetSecretValueRequest, GetSecretValueResultSuccess
 from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 from griptape_nodes.traits.file_system_picker import FileSystemPicker
 from griptape_nodes.traits.options import Options
@@ -215,6 +216,21 @@ class GenerateDatasetNode(SuccessFailureNode):
         )
         raise TypeError(msg)
 
+    def _get_api_key(self) -> str:
+        """Read the Griptape Cloud API key through the engine.
+
+        A request, not the secrets manager accessor: the engine refuses that accessor while a node
+        executes in a worker, and captioning happens during execution.
+        """
+        result = GriptapeNodes.handle_request(GetSecretValueRequest(key=API_KEY_ENV_VAR))
+        if not isinstance(result, GetSecretValueResultSuccess) or not result.value:
+            msg = (
+                f"Attempted to read the '{API_KEY_ENV_VAR}' secret to caption images with the default agent. "
+                f"Failed because it is not set. Set it in Settings, or connect an agent to the 'agent' input."
+            )
+            raise ValueError(msg)
+        return result.value
+
     async def create_dataset(
         self, dataset_folder: Path, images: list[ImageArtifact | ImageUrlArtifact | str | Path] | None
     ):
@@ -254,7 +270,7 @@ class GenerateDatasetNode(SuccessFailureNode):
             if not agent:
                 prompt_driver = GriptapeCloudPromptDriver(
                     model="gpt-4.1-mini",
-                    api_key=GriptapeNodes.SecretsManager().get_secret(API_KEY_ENV_VAR),
+                    api_key=self._get_api_key(),
                     stream=False,
                 )
                 agent = Agent(prompt_driver=prompt_driver)

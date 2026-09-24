@@ -1,11 +1,12 @@
 import asyncio
 import logging
+import subprocess
 from pathlib import Path
 from typing import Any
 
 from griptape_nodes.exe_types.core_types import Parameter
 from griptape_nodes.exe_types.node_types import SuccessFailureNode
-from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
+from griptape_nodes.utils.uv_utils import is_venv_functional, venv_python_path
 from lora.train_lora_parameters import TrainLoraParameters
 
 logger = logging.getLogger("griptape_nodes_lora_training_library")
@@ -90,27 +91,34 @@ class TrainLoraNode(SuccessFailureNode):
         self.ui_options_cache.clear()
 
     def _get_library_env_python(self) -> Path:
-        import subprocess
+        """Find the interpreter that has the training dependencies installed.
 
-        venv_path = Path(__file__).parent.parent / ".venv"
-        if GriptapeNodes.OSManager().is_windows():
-            venv_python_path = venv_path / "Scripts" / "python.exe"
+        The training script runs as a subprocess, so it needs an interpreter rather than an import.
+        The engine builds `.venv-exec` from `pip_dependencies_exec` and retires it when a manifest
+        declares none, so its presence says which environment holds them; the no-deps manifest has
+        only `.venv`.
+        """
+        library_root = Path(__file__).parent.parent
+        execution_venv_path = library_root / ".venv-exec"
+        if is_venv_functional(execution_venv_path):
+            venv_path = execution_venv_path
         else:
-            venv_python_path = venv_path / "bin" / "python"
+            venv_path = library_root / ".venv"
 
-        if not venv_python_path.exists():
+        python_path = venv_python_path(venv_path)
+        if not python_path.exists():
             msg = f"Library venv not found at {venv_path}. Please reinstall the LoRA training library."
             raise FileNotFoundError(msg)
 
         result = subprocess.run(
-            [str(venv_python_path), "-c", "import accelerate"],
+            [str(python_path), "-c", "import accelerate"],
             capture_output=True,
         )
         if result.returncode != 0:
             msg = f"Library venv at {venv_path} is missing required dependencies. Please reinstall the LoRA training library."
             raise RuntimeError(msg)
 
-        return venv_python_path
+        return python_path
 
     def _resolve_script_path(self, script_name: str) -> Path:
         """Resolve training script path, checking library root then sd-scripts."""

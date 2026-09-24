@@ -1,6 +1,6 @@
 {
   "name": "Griptape Nodes Lora Training Library",
-  "library_schema_version": "0.4.0",
+  "library_schema_version": "0.12.0",
   "advanced_library_path": "lora_training_library_advanced.py",
   "metadata": {
     "author": "Griptape, Inc.",
@@ -9,7 +9,8 @@
     "engine_version": "0.75.0",
     "tags": ["Griptape", "AI"],
     "dependencies": {
-      "pip_dependencies": [
+      "pip_dependencies": ["huggingface-hub>=1.0.1"],
+      "pip_dependencies_exec": [
         "torch==2.8.0",
         "torchvision==0.23.0",
         "accelerate==1.6.0",
@@ -29,7 +30,6 @@
         "safetensors>=0.8.0rc0",
         "toml==0.10.2",
         "voluptuous==0.15.2",
-        "huggingface-hub>=1.0.1",
         "imagesize==1.4.1",
         "numpy",
         "rich==14.1.0",
