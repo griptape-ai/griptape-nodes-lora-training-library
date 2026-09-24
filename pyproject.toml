@@ -8,10 +8,11 @@ authors = [
 readme = "README.md"
 requires-python = "~=3.12"
 dependencies = [
+    "huggingface-hub>=1.0.1,<2",
 ]
 
 [tool.uv.sources]
-griptape-nodes-engine = { git = "https://github.com/griptape-ai/griptape-nodes-engine", rev="main"}
+griptape-nodes-engine = { git = "https://github.com/griptape-ai/griptape-nodes-engine", rev="latest"}
 
 [build-system]
 requires = ["hatchling"]
