@@ -95,8 +95,7 @@ class TrainLoraNode(SuccessFailureNode):
 
         The training script runs as a subprocess, so it needs an interpreter rather than an import.
         The engine builds `.venv-exec` from `pip_dependencies_exec` and retires it when a manifest
-        declares none, so its presence says which environment holds them; the no-deps manifest has
-        only `.venv`.
+        declares none, so its presence says which environment holds them.
         """
         library_root = Path(__file__).parent.parent
         execution_venv_path = library_root / ".venv-exec"
