@@ -1,6 +1,6 @@
 [project]
 name = "griptape_nodes_lora_training_library"
-version = "0.1.0"
+version = "0.64.0"
 description = "Template for Users to create Custom Libraries and Nodes"
 authors = [
     {name = "Your Name",email = "you@example.com"}

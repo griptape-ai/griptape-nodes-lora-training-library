@@ -660,7 +660,7 @@ dependencies = [
 
 [[package]]
 name = "griptape-nodes-lora-training-library"
-version = "0.1.0"
+version = "0.64.0"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
