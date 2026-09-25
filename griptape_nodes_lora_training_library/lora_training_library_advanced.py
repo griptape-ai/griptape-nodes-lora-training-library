@@ -4,6 +4,7 @@ from pathlib import Path
 
 from griptape_nodes.node_library.advanced_node_library import AdvancedNodeLibrary
 from griptape_nodes.node_library.library_registry import Library, LibrarySchema
+from griptape_nodes.retained_mode.griptape_nodes import GriptapeNodes
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("lora_training_library")
@@ -16,6 +17,11 @@ class LoraTrainingLibraryAdvanced(AdvancedNodeLibrary):
         """Called before any nodes are loaded from the library."""
         msg = f"Starting to load nodes for '{library_data.name}' library..."
         logger.info(msg)
+
+        # The sd-scripts submodule populates the execution environment (it's imported
+        # only by process()), so only the worker needs to initialize it.
+        if not GriptapeNodes.LibraryManager().is_worker:
+            return
 
         logger.info("Initializing sd-scripts submodule...")
         self._init_sd_scripts_submodule()
