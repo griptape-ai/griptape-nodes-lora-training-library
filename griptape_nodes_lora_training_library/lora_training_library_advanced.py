@@ -18,8 +18,8 @@ class LoraTrainingLibraryAdvanced(AdvancedNodeLibrary):
         msg = f"Starting to load nodes for '{library_data.name}' library..."
         logger.info(msg)
 
-        # The sd-scripts submodule populates the execution environment (it's imported
-        # only by process()), so only the worker needs to initialize it.
+        # Only the worker runs the training subprocess that reads sd-scripts, so the orchestrator
+        # has no use for the checkout.
         if not GriptapeNodes.LibraryManager().is_worker:
             return
 

@@ -94,27 +94,21 @@ class TrainLoraNode(SuccessFailureNode):
         """Find the interpreter that has the training dependencies installed.
 
         The training script runs as a subprocess, so it needs an interpreter rather than an import.
-        The engine builds `.venv-exec` from `pip_dependencies_exec` and retires it when a manifest
-        declares none, so its presence says which environment holds them.
+        The engine builds `.venv-exec` from the manifest's `pip_dependencies_exec`, which is the only
+        environment the training dependencies are installed into.
         """
-        library_root = Path(__file__).parent.parent
-        execution_venv_path = library_root / ".venv-exec"
-        if is_venv_functional(execution_venv_path):
-            venv_path = execution_venv_path
-        else:
-            venv_path = library_root / ".venv"
-
-        python_path = venv_python_path(venv_path)
-        if not python_path.exists():
-            msg = f"Library venv not found at {venv_path}. Please reinstall the LoRA training library."
+        execution_venv_path = Path(__file__).parent.parent / ".venv-exec"
+        if not is_venv_functional(execution_venv_path):
+            msg = f"Execution venv not found at {execution_venv_path}. Please reinstall the LoRA training library."
             raise FileNotFoundError(msg)
 
+        python_path = venv_python_path(execution_venv_path)
         result = subprocess.run(
             [str(python_path), "-c", "import accelerate"],
             capture_output=True,
         )
         if result.returncode != 0:
-            msg = f"Library venv at {venv_path} is missing required dependencies. Please reinstall the LoRA training library."
+            msg = f"Execution venv at {execution_venv_path} is missing required dependencies. Please reinstall the LoRA training library."
             raise RuntimeError(msg)
 
         return python_path
@@ -127,11 +121,21 @@ class TrainLoraNode(SuccessFailureNode):
         if script_path.exists():
             return script_path
         # Fall back to sd-scripts directory (for kohya sd-scripts)
-        script_path = library_root / "sd-scripts" / script_name
+        sd_scripts_dir = library_root / "sd-scripts"
+        script_path = sd_scripts_dir / script_name
         if script_path.exists():
             return script_path
+        # An empty sd-scripts is the checkout never happening. Only the worker initializes the
+        # submodule, and the orchestrator does not take the worker's verdict on an exec-deps library,
+        # so the failure reaches the user here rather than as a library problem.
+        if not sd_scripts_dir.exists() or not any(sd_scripts_dir.iterdir()):
+            msg = (
+                f"The sd-scripts submodule at {sd_scripts_dir} was never checked out, so '{script_name}' is "
+                f"missing. Check the worker log for the submodule initialization failure."
+            )
+            raise FileNotFoundError(msg)
         raise FileNotFoundError(
-            f"Script '{script_name}' not found in {library_root} or {library_root / 'sd-scripts'}"
+            f"Script '{script_name}' not found in {library_root} or {sd_scripts_dir}"
         )
 
     def _generate_command(self, library_env_python: Path) -> list[str]:
