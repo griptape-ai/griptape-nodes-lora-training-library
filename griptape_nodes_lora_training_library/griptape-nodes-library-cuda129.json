@@ -5,7 +5,7 @@
     "metadata": {
         "author": "Griptape, Inc.",
         "description": "LoRA training for Griptape Nodes.",
-        "library_version": "0.63.0",
+        "library_version": "0.64.0",
         "engine_version": "0.102.0",
         "tags": [
             "Griptape",
