@@ -221,8 +221,13 @@ class GenerateDatasetNode(SuccessFailureNode):
 
         A request, not the secrets manager accessor: the engine refuses that accessor while a node
         executes in a worker, and captioning happens during execution.
+
+        `should_error_on_not_found=False` leaves reporting to the check below. The default logs a
+        generic "not found" in the engine first, which says less and says it twice.
         """
-        result = GriptapeNodes.handle_request(GetSecretValueRequest(key=API_KEY_ENV_VAR))
+        result = GriptapeNodes.handle_request(
+            GetSecretValueRequest(key=API_KEY_ENV_VAR, should_error_on_not_found=False)
+        )
         if not isinstance(result, GetSecretValueResultSuccess) or not result.value:
             msg = (
                 f"Attempted to read the '{API_KEY_ENV_VAR}' secret to caption images with the default agent. "
